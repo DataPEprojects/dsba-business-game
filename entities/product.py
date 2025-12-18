@@ -1,4 +1,5 @@
 "vide pour l'instant, j'imaginais des trucs spécifiques aux produits"
+# note personnelle, le choix du prix sera probablement hardcodé dans les règles du tour JSON"
 PRODUCTS_CONFIG = {
     "A": {
         "base_cost": 10,
