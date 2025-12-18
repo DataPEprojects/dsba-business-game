@@ -1,0 +1,41 @@
+{
+  "global": {
+    "event": "normal"
+  },
+  "countries": {
+    "France": {
+      "products": {
+        "A": {"base_demand": 8000},
+        "B": {"base_demand": 5000},
+        "C": {"base_demand": 2000}
+      },
+      "integration_bonus": 0.10
+    },
+    "USA": {
+      "products": {
+        "A": {"base_demand": 20000},
+        "B": {"base_demand": 10000},
+        "C": {"base_demand": 8000}
+      },
+      "integration_bonus": 0.12
+    },
+    "China": {
+      "products": {
+        "A": {"base_demand": 12000},
+        "B": {"base_demand": 7000},
+        "C": {"base_demand": 4000}
+      },
+      "integration_bonus": 0.20
+    }
+  },
+  "transport_matrix": {
+    "France": {"France": 0.00, "USA": 0.05, "China": 0.25},
+    "USA": {"France": 0.05, "USA": 0.00, "China": 0.20},
+    "China": {"France": 0.25, "USA": 0.20, "China": 0.00}
+  },
+  "tax_matrix": {
+    "France": {"France": 0.05, "USA": 0.08, "China": 0.15},
+    "USA": {"France": 0.08, "USA": 0.04, "China": 0.12},
+    "China": {"France": 0.10, "USA": 0.12, "China": 0.05}
+  }
+}

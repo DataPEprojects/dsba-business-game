@@ -1,0 +1,7 @@
+# Ignore the local Python virtual environment
+# Everyone should create their own .venv locally
+.venv/
+
+# Python cache (auto-generated)
+__pycache__/
+*.pyc
