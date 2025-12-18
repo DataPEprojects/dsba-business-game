@@ -7,9 +7,9 @@ class World:
         self.parameters = Parameters()
         self.turn = 1
         self.companies = [
-            Company("A"),
-            Company("B"),
-            Company("C")
+            Company("test_comp_1"),
+            Company("test_comp_2"),
+            Company("test_comp_2")
         ]
 
     def run(self, n_turns=2):
