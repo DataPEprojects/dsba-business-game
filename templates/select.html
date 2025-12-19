@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Selections</title>
+  </head>
+  <body>
+    <h1>Selections</h1>
+
+    <!-- Form 1: choisir le pays -->
+    <form method="get" action="/select">
+      <input type="hidden" name="num" value="{{ num }}" />
+
+      <label>Pays:</label>
+      <select name="country" onchange="this.form.submit()">
+        <option value="">-- choisir --</option>
+        {% for c in countries %}
+          <option value="{{ c }}" {% if c == country %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <br>
+
+    <!-- Form 2: choisir le produit (si pays choisi) -->
+    {% if country %}
+      <form method="get" action="/select">
+        <input type="hidden" name="num" value="{{ num }}" />
+        <input type="hidden" name="country" value="{{ country }}" />
+
+        <label>Produit:</label>
+        <select name="product" onchange="this.form.submit()">
+          <option value="">-- choisir --</option>
+          {% for p in products %}
+            <option value="{{ p }}" {% if p == product %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    {% endif %}
+
+    <br>
+
+    {% if base_demand is not none %}
+      <p><b>Base demand</b> pour {{ country }} / {{ product }} : {{ base_demand }}</p>
+    {% endif %}
+  </body>
+</html>
