@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Production Control</title>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Market Sim</h2>
+        <a href="/factories" class="menu-item">
+            🏭 Factories <span style="float:right; background:#3498db; padding:2px 6px; border-radius:4px; font-size:0.8em;">{{ factory_count }}</span>
+        </a>
+        <a href="/production" class="menu-item active">⚙️ Production</a>
+        <a href="/market" class="menu-item">🌍 Sales Market</a>
+
+        <div style="margin-top:auto; padding-top:20px; border-top:1px solid #34495e;">
+            <p style="font-size:0.9em; color:#bdc3c7;">Cash Available:</p>
+            <h3 style="color:#2ecc71;">$<span id="global-cash">{{ player_cash }}</span></h3>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1>Global Production Overview</h1>
+        
+        <div class="summary-panel">
+            <div class="summary-card" style="border-bottom: 4px solid #e74c3c;">
+                <h3>Total Maintenance</h3>
+                <div class="value" style="color:#e74c3c;">
+                    $<span id="header-total-maint">{{ global_maint }}</span>
+                </div>
+                <div class="sub-value">per turn</div>
+            </div>
+
+            <div class="summary-card" style="border-bottom: 4px solid #f39c12;">
+                <h3>Total Opening Costs</h3>
+                <div class="value" style="color:#f39c12;">
+                    $<span id="header-total-opening">0</span>
+                </div>
+                <div class="sub-value">this turn</div>
+            </div>
+
+            {% for p in all_products %}
+            <div class="summary-card" style="border-bottom: 4px solid #27ae60;">
+                <h3>Production {{ p }}</h3>
+                <div class="value">
+                    <span id="header-prod-{{ p }}">{{ global_prod[p] }}</span>
+                </div>
+                <div class="sub-value">units / turn</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <hr style="border:0; border-top:1px solid #ddd; margin: 30px 0;">
+
+        {% if factory_count == 0 %}
+            <div style="text-align:center; padding:50px; background:white; border-radius:8px;">
+                <h2>No active factories.</h2>
+                <p>Go to <a href="/factories">Factories</a> to build one.</p>
+            </div>
+        {% endif %}
+
+        <div class="factories-grid">
+            {% for country_name, factories_list in player_factories.items() %}
+                {% if factories_list|length > 0 %}
+                    {# --- CORRECTION ICI : method remplacé par attribute --- #}
+                    {% set total_cap = factories_list|sum(attribute='capacity') %}
+                    {% set used_cap = factories_list|sum(attribute='total_lines_used') %}
+                    {% set country_maint = factories_list|sum(attribute='maintenance_cost') %}
+
+                    <div class="factory-card" id="country-card-{{ country_name }}">
+                        <div class="card-header">
+                            <div style="display:flex; align-items:center;">
+                                <span style="font-size:1.5em; margin-right:10px;">🚩</span>
+                                <div>
+                                    <h2>{{ country_name }} <span style="font-size:0.6em; color:#7f8c8d;">({{ factories_list|length }} sites)</span></h2>
+                                </div>
+                            </div>
+                            <span class="stats" style="background:#ecf0f1; padding:5px 10px; border-radius:15px;">
+                                Total Load: <b id="cap-used-{{ country_name }}">{{ used_cap }}</b> / <span id="cap-max-{{ country_name }}">{{ total_cap }}</span>
+                            </span>
+                        </div>
+
+                        <div class="production-grid">
+                            {% for product in all_products %}
+                                {% set total_lines_for_product = 0 %}
+                                {% for f in factories_list %}
+                                    {% set total_lines_for_product = total_lines_for_product + f.product_lines.get(product, 0) %}
+                                {% endfor %}
+
+                                <div class="line-control">
+                                    <div>
+                                        <strong>Product {{ product }}</strong><br>
+                                        <span style="font-size: 0.8em; color: green;">
+                                            Output: <span id="prod-{{ country_name }}-{{ product }}">
+                                                {{ (total_lines_for_product * 100 * country_config[country_name].efficiency_multiplier)|int }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    
+                                    <button class="line-btn" onclick="updateCountryLines('{{ country_name }}', '{{ product }}', -1)">-</button>
+                                    <span class="line-display" id="lines-{{ country_name }}-{{ product }}">{{ total_lines_for_product }}</span>
+                                    <button class="line-btn" onclick="updateCountryLines('{{ country_name }}', '{{ product }}', 1)">+</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div style="margin-top: 15px; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 10px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                                <span style="color: #e74c3c;">Total Maint: <b>$<span id="maint-{{ country_name }}">{{ country_maint }}</span></b></span>
+                                <span style="color: #f39c12;">Line Cost: <b>${{ country_config[country_name].base_line_cost }}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        let turnOpeningCosts = 0;
+
+        function updateCountryLines(country, product, qty) {
+            fetch('/modify_lines_ajax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ country: country, product: product, qty: qty })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) alert(data.error);
+                else {
+                    // 1. Mise à jour de la carte PAYS (Consolidée)
+                    document.getElementById(`lines-${country}-${product}`).innerText = data.new_lines;
+                    document.getElementById(`prod-${country}-${product}`).innerText = data.new_production;
+                    document.getElementById(`cap-used-${country}`).innerText = data.new_capacity_used;
+                    document.getElementById(`maint-${country}`).innerText = data.new_maintenance;
+                    
+                    // 2. Mise à jour du HEADER GLOBAL
+                    // Maintenance
+                    document.getElementById(`header-total-maint`).innerText = data.global_maint;
+
+                    // Cumul Opening Costs
+                    if (data.last_op_cost > 0) {
+                        turnOpeningCosts += data.last_op_cost;
+                        document.getElementById('header-total-opening').innerText = turnOpeningCosts;
+                    }
+
+                    // Production par produit
+                    for (const [prodName, prodValue] of Object.entries(data.global_prod)) {
+                         const el = document.getElementById(`header-prod-${prodName}`);
+                         if(el) el.innerText = prodValue;
+                    }
+
+                    // 3. Mise à jour du CASH Sidebar
+                    document.getElementById(`global-cash`).innerText = data.new_cash;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

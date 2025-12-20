@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Factory Management</title>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Market Sim</h2>
+        <a href="/factories" class="menu-item active">
+            🏭 Factories <span style="float:right; background:#3498db; padding:2px 6px; border-radius:4px; font-size:0.8em;">{{ factory_count }}</span>
+        </a>
+        <a href="/production" class="menu-item">⚙️ Production</a>
+        <a href="/market" class="menu-item">🌍 Sales Market</a>
+        
+        <div style="margin-top:auto; padding-top:20px; border-top:1px solid #34495e;">
+            <p style="font-size:0.9em; color:#bdc3c7;">Cash Available:</p>
+            <h3 style="color:#2ecc71;">${{ player_cash }}</h3>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div style="padding:15px; margin-bottom:20px; border-radius:5px; background: {{ '#e74c3c' if category=='error' else '#27ae60' }}; color:white;">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div style="margin-bottom: 30px;">
+            <h1>Infrastructure Management</h1>
+            <p style="color:#7f8c8d;">Acquire new industrial sites to increase your global capacity.</p>
+        </div>
+
+        <div class="factories-grid">
+            
+            {% for country_name, config in country_config.items() %}
+                {% set factories_here = player_factories.get(country_name, []) %}
+                {% set count = factories_here|length %}
+
+                <div class="factory-card">
+                    <div class="card-header">
+                        <div style="display:flex; align-items:center;">
+                            <h2>{{ country_name }}</h2>
+                            {% if count > 0 %}
+                                <span style="background:#27ae60; color:white; padding:2px 8px; border-radius:10px; margin-left:10px; font-size:0.8em;">
+                                    {{ count }} Active
+                                </span>
+                            {% endif %}
+                        </div>
+                        <span class="stats" style="font-size:0.8em;">Setup: ${{ setup_costs[country_name] }}</span>
+                    </div>
+
+                    <div style="flex: 1; display:flex; flex-direction:column; justify-content:space-between;">
+                        <ul style="list-style:none; padding:0; margin-bottom:15px; color:#555; font-size:0.9em;">
+                            <li style="margin-bottom:5px;">🏭 <b>{{ count }}</b> sites operational</li>
+                            <li style="margin-bottom:5px;">📦 Max Cap: <b>{{ config.max_capacity }}</b> lines/site</li>
+                            <li>⚡ Efficiency: <b>x{{ config.efficiency_multiplier }}</b></li>
+                        </ul>
+                        
+                        <form action="/buy_factory" method="POST" style="margin-top:auto;">
+                            <input type="hidden" name="country" value="{{ country_name }}">
+                            <button type="submit" class="btn-buy" style="width:100%;">
+                                Build New (-${{ setup_costs[country_name] }})
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</body>
+</html>

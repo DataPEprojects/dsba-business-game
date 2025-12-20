@@ -1,9 +1,13 @@
-/* Simple Reset */
+/* =========================================
+   1. BASE & RESET
+   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
 
 body { display: flex; height: 100vh; background-color: #f4f4f9; }
 
-/* SIDEBAR - The Navigation */
+/* =========================================
+   2. SIDEBAR
+   ========================================= */
 .sidebar {
     width: 250px;
     background-color: #2c3e50;
@@ -21,6 +25,7 @@ body { display: flex; height: 100vh; background-color: #f4f4f9; }
     text-decoration: none;
     border-bottom: 1px solid #34495e;
     transition: 0.3s;
+    display: block; /* Assure que le lien prend toute la largeur */
 }
 
 .menu-item:hover, .menu-item.active {
@@ -29,20 +34,28 @@ body { display: flex; height: 100vh; background-color: #f4f4f9; }
     border-left: 5px solid #3498db;
 }
 
-/* MAIN CONTENT */
+/* =========================================
+   3. MAIN CONTENT AREA
+   ========================================= */
 .main-content {
     flex: 1;
     padding: 40px;
-    overflow-y: auto;
+    overflow-y: auto; /* Permet le scroll si la page est longue */
 }
 
-/* CARDS (Factories) */
+/* =========================================
+   4. CARDS (Base Style)
+   ========================================= */
 .factory-card {
     background: white;
     border-radius: 8px;
     padding: 20px;
-    margin-bottom: 20px;
+    /* margin-bottom retiré ici car géré par le Grid plus bas */
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    
+    /* Pour que les cartes aient la même hauteur dans la grille */
+    display: flex;
+    flex-direction: column; 
 }
 
 .card-header {
@@ -56,7 +69,9 @@ body { display: flex; height: 100vh; background-color: #f4f4f9; }
 
 .stats { font-size: 0.9em; color: #7f8c8d; }
 
-/* ACTIONS (Buttons & Inputs) */
+/* =========================================
+   5. BUTTONS & CONTROLS
+   ========================================= */
 .btn-buy {
     background-color: #27ae60;
     color: white;
@@ -64,7 +79,9 @@ body { display: flex; height: 100vh; background-color: #f4f4f9; }
     padding: 10px 20px;
     cursor: pointer;
     border-radius: 5px;
+    transition: background 0.2s;
 }
+.btn-buy:hover { background-color: #219150; }
 
 .line-control {
     display: flex;
@@ -73,6 +90,11 @@ body { display: flex; height: 100vh; background-color: #f4f4f9; }
     padding: 10px;
     background-color: #f8f9fa;
     border-radius: 5px;
+}
+
+/* Astuce : permet au texte du produit de prendre toute la place dispo */
+.line-control > div:first-child {
+    flex: 1; 
 }
 
 .line-btn {
@@ -84,6 +106,64 @@ body { display: flex; height: 100vh; background-color: #f4f4f9; }
     border-radius: 50%;
     cursor: pointer;
     font-weight: bold;
+    flex-shrink: 0; /* Empêche le bouton de s'écraser */
+}
+.line-btn:hover { background-color: #2980b9; }
+
+.line-display { 
+    margin: 0 15px; 
+    font-weight: bold; 
+    width: 30px; /* Largeur fixe pour éviter que tout bouge quand le chiffre change */
+    text-align: center;
 }
 
-.line-display { margin: 0 15px; font-weight: bold; }
+/* =========================================
+   6. NEW: DASHBOARD & GRID LAYOUT (Ajouts)
+   ========================================= */
+
+/* Le panneau de résumé en haut (Top Bar) */
+.summary-panel {
+    display: flex;
+    gap: 20px; /* Espace entre les cartes du haut */
+    margin-bottom: 30px;
+    flex-wrap: wrap; /* Permet de passer à la ligne sur petit écran */
+}
+
+.summary-card {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    flex: 1; /* Chaque carte prend la même largeur */
+    min-width: 150px; /* Largeur min pour pas être trop petit */
+    text-align: center;
+}
+
+.summary-card h3 {
+    font-size: 0.85em;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-card .value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.summary-card .sub-value {
+    font-size: 0.75em;
+    color: #bdc3c7;
+    margin-top: 2px;
+}
+
+/* La Grille pour les usines */
+.factories-grid {
+    display: grid;
+    /* Magie du CSS Grid : crée autant de colonnes que possible de 350px minimum */
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
+    gap: 20px; /* Espace entre les cartes */
+    padding-bottom: 50px;
+}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Market Strategy</title>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <h2>Market Sim</h2>
+        <a href="/factories" class="menu-item">🏭 Factories</a>
+        <a href="/production" class="menu-item">⚙️ Production</a>
+        <a href="/market" class="menu-item active">🌍 Sales Market</a>
+        
+        <div style="margin-top:auto; padding-top:20px; border-top:1px solid #34495e;">
+            <p style="font-size:0.9em; color:#bdc3c7;">Cash Available:</p>
+            <h3 style="color:#2ecc71;">$<span id="global-cash">{{ player_cash }}</span></h3>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1>Sales Strategy</h1>
+
+        {% if global_event.event != 'normal' %}
+        <div class="alert-box">⚠️ Event: {{ global_event.event }}</div>
+        {% endif %}
+
+        <div class="factories-grid">
+            
+            {% for country in active_countries %}
+            <div class="factory-card">
+                <div class="card-header">
+                    <h2>🇫🇷 {{ country }}</h2>
+                </div>
+
+                <div class="production-grid">
+                    {% for p in all_products %}
+                    
+                    {% set quantity_to_sell = local_prod[country][p] %}
+                    
+                    {% if quantity_to_sell > 0 %}
+                        <div class="line-control" style="flex-direction:column; align-items:flex-start; padding:15px; border-bottom:1px solid #eee;">
+                            
+                            <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <strong>Produit {{ p }}</strong>
+                                <span style="background:#e1f5fe; color:#0288d1; padding:2px 8px; border-radius:4px; font-size:0.9em;">
+                                    Stock: <b>{{ quantity_to_sell }}</b> units
+                                </span>
+                            </div>
+
+                            {% set prices = products_meta[p].get('price_options') or products_meta[p].get('price_range') %}
+                            <div style="width:100%; margin-bottom:8px;">
+                                <label style="font-size:0.8em; color:#7f8c8d;">Selling Price</label>
+                                <select onchange="saveDecision('{{ country }}', '{{ p }}', 'price', this.value)" style="width:100%;">
+                                    <option value="">-- Set Price --</option>
+                                    {% for price in prices %}
+                                        <option value="{{ price }}">${{ price }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div style="width:100%;">
+                                <label style="font-size:0.8em; color:#7f8c8d;">Marketing Budget</label>
+                                <select onchange="saveDecision('{{ country }}', '{{ p }}', 'marketing', this.value)" style="width:100%;">
+                                    <option value="0">None</option>
+                                    {% for budget in marketing_meta.budget_marketing %}
+                                        <option value="{{ budget }}">${{ budget }}k</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                        </div>
+                    {% endif %} {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if active_countries|length == 0 %}
+            <div style="grid-column: 1/-1; text-align:center; margin-top:50px;">
+                <h3>Aucune production active.</h3>
+                <p>Allez dans l'onglet <a href="/production">Production</a> pour assigner des lignes.</p>
+            </div>
+            {% endif %}
+
+        </div>
+        
+        <div style="margin-top:40px; text-align:right;">
+            <button onclick="endTurn()" style="background:#27ae60; color:white; padding:15px 30px; border:none; border-radius:5px; font-size:1.2em; cursor:pointer;">
+                ✅ VALIDER LE TOUR
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function saveDecision(country, product, type, value) {
+            console.log("Saving", country, product, type, value);
+            
+            fetch('/update_market_strategy', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    country: country,
+                    product: product,
+                    type: type,
+                    value: parseInt(value)
+                })
+            });
+            // Pas besoin de rafraîchir le cash immédiatement sauf si tu veux déduire le marketing en temps réel
+        }
+
+        function endTurn() {
+            if(confirm("Valider les décisions et passer au tour suivant ?")) {
+                window.location.href = "/end_turn";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,15 +1,35 @@
 class Company:
-    """Représente une entreprise (joueur ou IA)."""
     def __init__(self, name, is_player=False):
         self.name = name
         self.is_player = is_player
-        self.cash = 1000
+        self.factories = {} 
+        self.cash = 100000
         self.profit =0
-        self.factories = {}
         self.stock = {}
         self.revenue = 0
-        self.costs = {}
+        self.costs = {}        
+        # --- AJOUT POUR LES VENTES ---
+        # Structure : self.sales_decisions[Pays][Produit] = {"price": 0, "marketing": 0}
+        self.sales_decisions = {} 
 
+    def get_decision(self, country, product):
+        """Récupère la décision actuelle ou renvoie une valeur par défaut"""
+        if country not in self.sales_decisions:
+            self.sales_decisions[country] = {}
+        
+        if product not in self.sales_decisions[country]:
+            self.sales_decisions[country][product] = {"price": 0, "marketing": 0}
+            
+        return self.sales_decisions[country][product]
+
+    def set_decision(self, country, product, field, value):
+        """Enregistre une décision (price ou marketing)"""
+        # Initialisation si nécessaire
+        self.get_decision(country, product)
+        
+        # Enregistrement
+        self.sales_decisions[country][product][field] = value
+        
     def ensure_all_products(self,products):
         """Pour avoir les stocks de manière dynamique (pour pouvoir en ajouter/modifier en toute sérénité)."""
         for p in products:
