@@ -5,7 +5,7 @@ class Company:
         self.is_player = is_player
         self.cash = 1000
         self.profit =0
-
+        self.factories = {}
         self.stock = {}
         self.revenue = 0
         self.costs = {}

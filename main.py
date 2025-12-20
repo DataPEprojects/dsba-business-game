@@ -1,85 +1,108 @@
-from flask import Flask, jsonify, request, render_template
-from engine.parameters import Parameters
+from flask import Flask, render_template, request, redirect, url_for, flash
+from engine.world import World
+from entities.factory import Factories, COUNTRY_CONFIG
 
 app = Flask(__name__)
-params = Parameters()
+app.secret_key = "super_secret_key" # Nécessaire pour utiliser 'flash' (messages d'erreur/succès)
 
-def get_turn_data(num: int):
-    return params.get_turn(num)
+# Initialisation du monde
+world = World()
+
+# Configuration des coûts d'ouverture d'usine (Hardcodé pour l'exemple)
+SETUP_COSTS = {
+    "USA": 10000,
+    "China": 5000,
+    "France": 8000
+}
+
+def get_player():
+    """Récupère le premier joueur humain trouvé."""
+    for c in world.companies:
+        if c.is_player:
+            return c
+    return None
+
+# --- ROUTES D'AFFICHAGE ---
 
 @app.route("/")
 def index():
-    return "OK. Try /turn?num=1 or /select"
+    return redirect(url_for('factories_dashboard'))
 
-@app.route("/turn")
-def turn():
-    num = request.args.get("num", default=1, type=int)
-    return jsonify(get_turn_data(num))
-
-@app.route("/countries")
-def countries():
-    num = request.args.get("num", default=1, type=int)
-    data = get_turn_data(num)
-    return jsonify(sorted(list(data["countries"].keys())))
-
-@app.route("/products")
-def products():
-    num = request.args.get("num", default=1, type=int)
-    country = request.args.get("country", default=None, type=str)
-
-    data = get_turn_data(num)
-    countries_data = data["countries"]
-
-    if country:
-        if country not in countries_data:
-            return jsonify({"error": f"Unknown country: {country}"}), 400
-        return jsonify(sorted(list(countries_data[country]["products"].keys())))
-
-    all_products = set()
-    for cdata in countries_data.values():
-        all_products.update(cdata["products"].keys())
-    return jsonify(sorted(list(all_products)))
-
-@app.route("/country_info")
-def country_info():
-    num = request.args.get("num", default=1, type=int)
-    country = request.args.get("country", default=None, type=str)
-
-    if not country:
-        return jsonify({"error": "Missing query param: country"}), 400
-
-    data = get_turn_data(num)
-    if country not in data["countries"]:
-        return jsonify({"error": f"Unknown country: {country}"}), 400
-
-    return jsonify(data["countries"][country])
-
-@app.route("/select")
-def select():
-    num = request.args.get("num", default=1, type=int)
-    country = request.args.get("country", default="", type=str)
-    product = request.args.get("product", default="", type=str)
-
-    data = get_turn_data(num)
-
-    countries_list = sorted(list(data["countries"].keys()))
-    products_list = []
-    base_demand = None
-
-    if country and country in data["countries"]:
-        products_list = sorted(list(data["countries"][country]["products"].keys()))
-        if product and product in data["countries"][country]["products"]:
-            base_demand = data["countries"][country]["products"][product]["base_demand"]
-
+@app.route("/factories")
+def factories_dashboard():
+    player = get_player()
+    
+    # On passe toutes les infos nécessaires au template dashboard.html
     return render_template(
-        "select.html",
-        num=num,
-        countries=countries_list,
-        country=country,
-        products=products_list,
-        product=product,
-        base_demand=base_demand,
+        "dashboard.html",
+        country_config=COUNTRY_CONFIG,
+        player_factories=player.factories, # Doit être un dict {Pays: ObjetFactory}
+        all_products=["A", "B", "C"],      # Liste de tes produits
+        setup_costs=SETUP_COSTS,
+        player_cash=player.cash
     )
 
+# --- ROUTES D'ACTION (POST) ---
+
+@app.route("/buy_factory", methods=["POST"])
+def buy_factory():
+    player = get_player()
+    country = request.form.get("country")
+    cost = SETUP_COSTS.get(country, 999999)
+
+    # 1. Vérif : A-t-il déjà l'usine ?
+    if country in player.factories:
+        flash(f"Usine déjà présente en {country} !", "error")
+        return redirect(url_for('factories_dashboard'))
+
+    # 2. Vérif : A-t-il l'argent ?
+    if player.cash < cost:
+        flash("Fonds insuffisants pour ouvrir cette usine.", "error")
+        return redirect(url_for('factories_dashboard'))
+
+    # 3. Action : Paiement et Création
+    player.cash -= cost
+    new_factory = Factories(country)
+    player.factories[country] = new_factory # Assure-toi que player.factories est un dict !
+    
+    flash(f"Usine ouverte en {country} pour {cost}€.", "success")
+    return redirect(url_for('factories_dashboard'))
+
+
+@app.route("/modify_lines", methods=["POST"])
+def modify_lines():
+    player = get_player()
+    country = request.form.get("country")
+    product = request.form.get("product")
+    try:
+        qty = int(request.form.get("qty"))
+    except ValueError:
+        return redirect(url_for('factories_dashboard'))
+
+    # Récupération de l'usine
+    factory = player.factories.get(country)
+    if not factory:
+        return redirect(url_for('factories_dashboard'))
+
+    try:
+        # Calcul du coût via la méthode de la classe Factory
+        cost = factory.modify_lines(product, qty)
+        
+        # Application du coût au joueur
+        # Note: Si cost est positif, on paie. Si on supprime des lignes, cost est négatif (remboursement ?)
+        # À toi de décider si on rembourse ou non. Ici, on paie l'installation.
+        if qty > 0:
+            if player.cash >= cost:
+                player.cash -= cost
+            else:
+                # Annuler l'ajout si pas de sous (rollback manuel simple)
+                factory.modify_lines(product, -qty) 
+                flash("Pas assez d'argent pour ajouter cette ligne.", "error")
+        
+    except ValueError as e:
+        flash(str(e), "error")
+
+    return redirect(url_for('factories_dashboard'))
+
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(debug=True, port=5000)

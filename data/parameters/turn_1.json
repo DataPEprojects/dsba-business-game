@@ -2,6 +2,14 @@
   "global": {
     "event": "normal"
   },
+  "products_meta": {
+    "A": { "price_options": [15, 16, 17, 18, 19, 20] },
+    "B": { "price_range": [75, 76, 77 , 78, 79, 80] },
+    "C": { "price_range": [105, 106, 107, 108, 109, 110] }
+  },
+    "marketing_meta": {
+      "budget_marketing":[15, 16, 17, 18, 19, 20]
+  },
   "countries": {
     "France": {
       "products": {
