@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/style.css">
+    <title>End of Turn</title>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Market Sim</h2>
+        <a href="/factories" class="menu-item">🏭 Factories</a>
+        <a href="/production" class="menu-item">⚙️ Production</a>
+        <a href="/market" class="menu-item">🌍 Sales Market</a>
+        <a href="/overview" class="menu-item active">🏁 Overview & End</a>
+        
+        <div style="margin-top:auto; padding-top:20px; border-top:1px solid #34495e;">
+            <p style="font-size:0.9em; color:#bdc3c7;">Cash Available:</p>
+            <h3 style="color:#2ecc71;">${{ player_cash }}</h3>
+            <p style="font-size:0.8em; color:#7f8c8d; margin-top:5px;">Turn {{ current_turn }}</p>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <h1>Tour Overview - {{ current_turn }}</h1>
+        <p style="color:#7f8c8d; margin-bottom: 40px;">Review your decisions before proceeding to the next quarter.</p>
+
+        <div style="background: #fff; padding: 40px; border-radius: 8px; border: 2px dashed #bdc3c7; text-align: center; color: #95a5a6; margin-bottom: 40px;">
+            <h3>📊 Financial Report (Coming Soon in V1)</h3>
+            <p>Projected Profits, Market Share analysis and AI moves will appear here.</p>
+        </div>
+
+        <div style="background: #fadbd8; padding: 20px; border-radius: 8px; border: 1px solid #e6b0aa;">
+            <h3 style="color: #c0392b; margin-bottom: 10px;">Ready to finalize?</h3>
+            <p style="margin-bottom: 20px;">Once you end the turn, all production and sales decisions are final.</p>
+            
+            <form action="/end_turn" method="POST">
+                <button type="submit" 
+                        style="background-color: #c0392b; color: white; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%;">
+                    🚀 EXECUTE TURN {{ current_turn }}
+                </button>
+            </form>
+        </div>
+
+    </div>
+</body>
+</html>

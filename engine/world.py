@@ -77,17 +77,20 @@ class World:
                         
                         # 2. On alimente TON dictionnaire de coûts
                         company.costs["marketing"] += budget
-    # def apply_player_action(self,company,action_data):
-    #     """
-    #     Here we will apply all the formulas, such as matrix prices ect...
-    #     """
-    #     pass
 
-    # def simulate_ai_turn(self, params):
-    #     """
-    #     Logic of AIs decisions
-    #     """
-    #     for c in self.companies:
-    #         if not c.is_player:
-    #             #AI logic to create
-    #             pass
+    def resolve_turn(self):
+            """
+            Logique de fin de tour V0.
+            """
+            print(f"--- RESOLVING TURN {self.turn} ---")
+            
+            # 1. Incrémenter le tour
+            self.turn += 1
+            
+            # 2. (V0) On vérifie juste que le JSON charge, sinon on gère l'erreur
+            try:
+                # Juste pour tester que le fichier existe, on ne fait rien avec pour l'instant
+                _ = self.parameters.get_turn(self.turn)
+            except Exception as e:
+                print(f"⚠️ Warning: Pas de config pour le tour {self.turn}. Fin du contenu demo ?")
+                # Optionnel : self.turn -= 1 si tu veux bloquer
