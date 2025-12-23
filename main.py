@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+﻿from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from engine.world import World
 from entities.factory import Factories, COUNTRY_CONFIG
 
@@ -100,9 +100,8 @@ def market():
         'market.html', 
         player=player,
         all_markets=all_markets,
-        # On passe les métadonnées pour générer les <select>
         products_meta=current_params["products_meta"], 
-        marketing_meta=current_params["marketing_meta"],
+        countries_data=current_params["countries"],
         global_event=current_params["global"],
         **get_sidebar_data(player)
     )
@@ -224,9 +223,38 @@ def update_sales_ajax():
 @app.route("/overview")
 def view_overview():
     player = get_player()
+    ranking = world.get_ranking()
+    
+    # Préparer les données pour le tableau à double entrée
+    current_params = world.get_turn_data()
+    
+    # Agréger les ventes par (country, product, company)
+    sales_matrix = {}
+    for sale in world.sales_history:
+        key = (sale["country"], sale["product"])
+        if key not in sales_matrix:
+            base_demand = current_params["countries"][sale["country"]]["products"].get(sale["product"], {}).get("base_demand", 0)
+            sales_matrix[key] = {
+                "country": sale["country"],
+                "product": sale["product"],
+                "base_demand": base_demand,
+                "sales": {}
+            }
+        company_name = sale["company_name"]
+        sales_matrix[key]["sales"][company_name] = sales_matrix[key]["sales"].get(company_name, 0) + sale["quantity"]
+    
+    # Convertir en liste pour le template
+    sales_table = list(sales_matrix.values())
+    
+    # Liste de toutes les entreprises
+    all_companies = [c.name for c in world.companies]
+    
     return render_template(
         "turn_overview.html",
         player=player,
+        ranking=ranking,
+        sales_table=sales_table,
+        all_companies=all_companies,
         **get_sidebar_data(player)
     )
 
@@ -244,3 +272,5 @@ def end_turn():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
+

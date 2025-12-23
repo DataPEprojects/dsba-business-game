@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <link rel="stylesheet" href="/static/style.css">
@@ -35,10 +35,11 @@
     <div class="sidebar">
         <h2>Market Sim</h2>
         <a href="/factories" class="menu-item">
-            🏭 Factories <span style="float:right; background:#34495e; padding:2px 6px; border-radius:4px; font-size:0.8em;">{{ factory_count }}</span>
+             Factories <span style="float:right; background:#34495e; padding:2px 6px; border-radius:4px; font-size:0.8em;">{{ factory_count }}</span>
         </a>
-        <a href="/production" class="menu-item">⚙️ Production</a>
-        <a href="/market" class="menu-item active">🌍 Sales Market</a>
+        <a href="/production" class="menu-item"> Production</a>
+        <a href="/market" class="menu-item active"> Sales Market</a>
+        <a href="/overview" class="menu-item"> Overview & End Turn</a>
         
         <div style="margin-top:auto; padding-top:20px; border-top:1px solid #34495e;">
             <p style="font-size:0.9em; color:#bdc3c7;">Cash Available:</p>
@@ -52,7 +53,7 @@
         <div style="margin-bottom: 30px;">
             <h1>Global Sales Strategy</h1>
             <div style="background-color: #d4e6f1; color: #2980b9; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 5px solid #3498db;">
-                <strong>📢 Global Event:</strong> {{ global_event.event }}
+                <strong> Global Event:</strong> {{ global_event.event }}
             </div>
         </div>
 
@@ -70,50 +71,35 @@
                     {% for product, meta in products_meta.items() %}
                     
                     {% set saved_price = player.sales_decisions.get(market_country, {}).get(product, {}).get('price', 0) %}
-                    {% set saved_marketing = player.sales_decisions.get(market_country, {}).get(product, {}).get('marketing', 0) %}
-                    
                     {% set allowed_prices = meta.get('price_options') or meta.get('price_range') or [] %}
-                    
-                    {% set allowed_marketing = marketing_meta.get('budget_marketing', []) %}
+                    {% set base_demand = countries_data[market_country]["products"].get(product, {}).get("base_demand", 0) %}
 
                     <div class="product-box">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                             <b style="color:#2c3e50;">Product {{ product }}</b>
-                            <span style="font-size:0.8em; color:#7f8c8d;">Base Demand: {{ meta.base_demand }}</span>
+                            <div style="display:flex; gap:10px;">
+                                <span style="font-size:0.85em; color:#3498db; background:#ebf5fb; padding:3px 8px; border-radius:3px;">
+                                     Stock: {{ player.stock.get(product, 0) }}
+                                </span>
+                                <span style="font-size:0.85em; color:#e67e22; background:#fef5e7; padding:3px 8px; border-radius:3px;">
+                                     Max Demand: {{ base_demand }}
+                                </span>
+                            </div>
                         </div>
                         
-                        <div style="display:flex; gap:10px; margin-top: 10px;">
-                            
-                            <div style="flex:1;">
-                                <label style="font-size:0.7em; color:#7f8c8d;">PRICE (€)</label>
-                                <select class="market-input"
-                                        data-country="{{ market_country }}" 
-                                        data-product="{{ product }}" 
-                                        data-field="price"
-                                        onchange="saveMarketData(this)">
-                                    
-                                    <option value="0" disabled {% if saved_price == 0 %}selected{% endif %}>--</option>
-                                    {% for p in allowed_prices %}
-                                        <option value="{{ p }}" {% if saved_price == p %}selected{% endif %}>{{ p }} €</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div style="flex:1;">
-                                <label style="font-size:0.7em; color:#7f8c8d;">MARKETING (€)</label>
-                                <select class="market-input" 
-                                       data-country="{{ market_country }}" 
-                                       data-product="{{ product }}" 
-                                       data-field="marketing"
-                                       onchange="saveMarketData(this)">
-                                       
-                                    <option value="0" {% if saved_marketing == 0 %}selected{% endif %}>0 €</option>
-                                    
-                                    {% for m in allowed_marketing %}
-                                        <option value="{{ m }}" {% if saved_marketing == m %}selected{% endif %}>{{ m }} €</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                        <div style="margin-top: 10px;">
+                            <label style="font-size:0.75em; color:#7f8c8d; font-weight:600;">SELLING PRICE</label>
+                            <select class="market-input"
+                                    data-country="{{ market_country }}" 
+                                    data-product="{{ product }}" 
+                                    data-field="price"
+                                    onchange="saveMarketData(this)">
+                                
+                                <option value="0" disabled {% if saved_price == 0 %}selected{% endif %}>-- Not Selling --</option>
+                                {% for p in allowed_prices %}
+                                    <option value="{{ p }}" {% if saved_price == p %}selected{% endif %}>{{ p }} €</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     {% endfor %}
