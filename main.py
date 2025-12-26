@@ -76,6 +76,14 @@ def view_production():
     current_params = world.get_turn_data()
     dynamic_products_list = list(current_params["products_meta"].keys())
 
+    # NOUVEAU : Précalculer les lignes de production par pays et par produit
+    production_by_country = {}
+    for country, factories_list in player.factories.items():
+        production_by_country[country] = {}
+        for product in dynamic_products_list:
+            total_lines = sum(f.product_lines.get(product, 0) for f in factories_list)
+            production_by_country[country][product] = total_lines
+
     return render_template(
         "production.html",
         country_config=COUNTRY_CONFIG,
@@ -83,6 +91,7 @@ def view_production():
         all_products=dynamic_products_list, 
         global_maint=global_maint, 
         global_prod=global_prod,
+        production_by_country=production_by_country,  # NOUVEAU
         **get_sidebar_data(player)
     )
 

@@ -84,10 +84,8 @@
 
                         <div class="production-grid">
                             {% for product in all_products %}
-                                {% set total_lines_for_product = 0 %}
-                                {% for f in factories_list %}
-                                    {% set total_lines_for_product = total_lines_for_product + f.product_lines.get(product, 0) %}
-                                {% endfor %}
+                                {# Utiliser les données précalculées depuis Python #}
+                                {% set total_lines_for_product = production_by_country[country_name][product] %}
 
                                 <div class="line-control">
                                     <div>

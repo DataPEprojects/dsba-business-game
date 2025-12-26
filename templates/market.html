@@ -98,9 +98,6 @@
             <div style="background-color: #d4e6f1; color: #2980b9; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 5px solid #3498db;">
                 <strong>📊 Global Event:</strong> {{ global_event.event }}
             </div>
-            <div style="background-color: #f9ebea; color: #c0392b; padding: 12px; border-radius: 5px; margin-top: 10px; border-left: 5px solid #e74c3c;">
-                <strong>⚠️ Nouvelle règle :</strong> Chaque produit ne peut être vendu que dans UN SEUL pays
-            </div>
         </div>
 
         <div style="max-width: 900px;">
@@ -118,7 +115,7 @@
 
                 <div class="product-info">
                     <div class="info-badge stock-badge">
-                        📊 Stock Available: {{ player.stock.get(product, 0) }} units
+                        📊 Stock remaining from previous rounds: {{ player.stock.get(product, 0) }} units
                     </div>
                 </div>
 
@@ -152,14 +149,15 @@
                     </div>
                 </div>
 
-                <!-- Info sur la demande du pays sélectionné -->
-                {% if saved_country and saved_country != '' %}
+                <!-- Info sur la demande de tous les pays -->
                 <div class="demand-info">
-                    <strong>📈 {{ saved_country }} Market Info:</strong><br>
-                    Base Demand for Product {{ product }}: 
-                    <strong>{{ countries_data[saved_country]["products"].get(product, {}).get("base_demand", 0) }} units</strong>
+                    <strong>📈 Market Demand by Country:</strong><br>
+                    {% for country in all_markets %}
+                        <span style="display: inline-block; margin-right: 15px; margin-top: 5px;">
+                            <strong>{{ country }}:</strong> {{ countries_data[country]["products"].get(product, {}).get("base_demand", 0) }} units
+                        </span>
+                    {% endfor %}
                 </div>
-                {% endif %}
 
             </div>
             {% endfor %}
@@ -191,11 +189,6 @@
                 if(data.status === 'saved') {
                     input.style.borderColor = "#27ae60"; 
                     setTimeout(() => { input.style.borderColor = "#bdc3c7"; }, 800);
-                    
-                    // Si on a changé le pays, recharger la page pour mettre à jour les infos de demande
-                    if(input.dataset.field === 'country') {
-                        setTimeout(() => { location.reload(); }, 1000);
-                    }
                 } else {
                     input.style.borderColor = "#e74c3c";
                 }
