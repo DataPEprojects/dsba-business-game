@@ -5,11 +5,11 @@ from entities.factory import Factories, COUNTRY_CONFIG
 app = Flask(__name__)
 app.secret_key = "super_secret_key" 
 
-# 1. INITIALISATION DU MONDE
+# 1. WORLD INITIALIZATION
 world = World()
 
-# --- CONFIGURATION FIXE (Setup Costs) ---
-# Note : Si ça devient dynamique un jour, on le bougera dans le JSON
+# fixed setup costs
+# Note : Can be moved to json file later if it becomes dynamic
 SETUP_COSTS = {
     "USA": 10000,
     "China": 5000,
@@ -19,14 +19,14 @@ SETUP_COSTS = {
 # --- HELPERS ---
 
 def get_player():
-    """Récupère l'objet Company du joueur humain."""
+    """Return the human player's Company object (or None if not initialized)"""
     for c in world.companies:
         if c.is_player:
             return c
     return None
 
 def get_sidebar_data(player):
-    """Données communes pour la sidebar (Cash, Tour, Usines)."""
+    """Common sidebar data (cash, current turn, factory count)"""
     count = sum(len(factories) for factories in player.factories.values())
     return {
         "factory_count": count,
@@ -35,7 +35,7 @@ def get_sidebar_data(player):
     }
 
 def calculate_global_stats(player):
-    """Calcule la maintenance totale et la production totale par produit."""
+    """Compute total maintenance and total production capacity per product."""
     total_maint = 0
     total_prod = {} 
 
@@ -50,7 +50,7 @@ def calculate_global_stats(player):
 
     return total_maint, total_prod
 
-# --- ROUTES D'AFFICHAGE ---
+# --- VIEW ROUTES ---
 
 @app.route("/")
 def index():
@@ -202,8 +202,11 @@ def update_sales_ajax():
     data = request.json
     country = data.get('country')
     product = data.get('product')
-    field = data.get('field') # 'price' ou 'marketing'
+    field = data.get('field') # 'price' or 'marketing'
     
+    if field not in {"price", "marketing"}:
+        return jsonify({'error': 'Invalid field'}), 400
+
     try:
         value = int(data.get('value'))
     except (ValueError, TypeError):
@@ -219,7 +222,8 @@ def update_sales_ajax():
 
     return jsonify({'status': 'saved', 'value': value})
 
-# --- ROUTE POUR AFFICHER LA PAGE OVERVIEW ---
+# --- TURN OVERVIEW PAGE ---
+
 @app.route("/overview")
 def view_overview():
     player = get_player()
@@ -258,7 +262,7 @@ def view_overview():
         **get_sidebar_data(player)
     )
 
-# --- ROUTE D'ACTION (Le bouton rouge) ---
+# --- END TURN ACTION (main game loop trigger) ---
 @app.route("/end_turn", methods=["POST"])
 def end_turn():
     # 1. On lance la résolution dans le moteur
