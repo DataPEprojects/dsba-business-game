@@ -103,10 +103,15 @@ class World:
                                 except:
                                     pass
             
-            # 3. Définir les prix de vente
-            for country, products in turn_data["sales_prices"].items():
-                for product, price in products.items():
-                    company.set_decision(country, product, "price", price)
+            # 3. Définir les décisions de vente (pays + prix)
+            sales = turn_data.get("sales", {})
+            for product, decision in sales.items():
+                country = decision.get("country", "")
+                price = decision.get("price", 0)
+                if country:
+                    company.set_decision(product, "country", country)
+                if price > 0:
+                    company.set_decision(product, "price", price)
     
     def _calculate_production(self):
         """Calcule la production et l'ajoute aux stocks."""
@@ -131,45 +136,62 @@ class World:
             company.costs["maintenance"] = total_maintenance
     
     def _resolve_sales(self):
-        """Résout les ventes selon la logique du prix le plus bas."""
+        """Résout les ventes selon la logique du prix le plus bas.
+        NOUVELLE LOGIQUE : Chaque produit ne peut être vendu que dans UN SEUL pays."""
         params = self.get_turn_data()
-        self.sales_history = []  # Reset l historique pour ce tour
+        self.sales_history = []  # Reset l'historique pour ce tour
         
-        # Pour chaque marché (pays) et produit
-        for country in params["countries"].keys():
-            for product in params["products_meta"].keys():
-                base_demand = params["countries"][country]["products"].get(product, {}).get("base_demand", 0)
+        # Pour chaque produit, résoudre les ventes dans le pays où il est commercialisé
+        for product in params["products_meta"].keys():
+            
+            # Collecter toutes les offres pour ce produit (company, pays, prix, stock)
+            offers = []
+            for company in self.companies:
+                decision = company.get_decision(product)
+                country = decision.get("country", "")
+                price = decision.get("price", 0)
+                stock = company.stock.get(product, 0)
                 
-                if base_demand == 0:
-                    continue
-                
-                # Collecter toutes les offres (company, price, stock disponible)
-                offers = []
-                for company in self.companies:
-                    decision = company.get_decision(country, product)
-                    price = decision.get("price", 0)
-                    stock = company.stock.get(product, 0)
-                    
-                    if price > 0 and stock > 0:
-                        offers.append({
-                            "company": company,
-                            "price": price,
-                            "stock": stock
-                        })
-                
-                if not offers:
-                    continue
+                # Le produit doit avoir un pays assigné, un prix > 0 et du stock
+                if country and price > 0 and stock > 0:
+                    # Vérifier que ce pays existe et qu'il y a de la demande
+                    if country in params["countries"]:
+                        base_demand = params["countries"][country]["products"].get(product, {}).get("base_demand", 0)
+                        if base_demand > 0:
+                            offers.append({
+                                "company": company,
+                                "country": country,
+                                "price": price,
+                                "stock": stock,
+                                "base_demand": base_demand
+                            })
+            
+            if not offers:
+                continue
+            
+            # Grouper les offres par pays (un produit peut être vendu par plusieurs entreprises dans différents pays)
+            # Mais chaque entreprise ne vend son produit que dans UN pays
+            offers_by_country = {}
+            for offer in offers:
+                country = offer["country"]
+                if country not in offers_by_country:
+                    offers_by_country[country] = []
+                offers_by_country[country].append(offer)
+            
+            # Pour chaque pays où le produit est commercialisé
+            for country, country_offers in offers_by_country.items():
+                base_demand = country_offers[0]["base_demand"]  # Même demande pour tous
                 
                 # Trier par prix croissant
-                offers.sort(key=lambda x: x["price"])
+                country_offers.sort(key=lambda x: x["price"])
                 
                 remaining_demand = base_demand
                 
                 # Algorithme de vente
-                while remaining_demand > 0 and offers:
+                while remaining_demand > 0 and country_offers:
                     # Trouver le prix minimum
-                    min_price = offers[0]["price"]
-                    sellers_at_min_price = [o for o in offers if o["price"] == min_price]
+                    min_price = country_offers[0]["price"]
+                    sellers_at_min_price = [o for o in country_offers if o["price"] == min_price]
                     
                     if not sellers_at_min_price:
                         break
@@ -188,7 +210,6 @@ class World:
                             seller["company"].cash += revenue
                             seller["company"].revenue += revenue
                             
-                            
                             # Tracker la vente
                             self.sales_history.append({
                                 "country": country,
@@ -203,7 +224,7 @@ class World:
                             remaining_demand -= qty_to_sell
                     
                     # Retirer les vendeurs sans stock
-                    offers = [o for o in offers if o["stock"] > 0]
+                    country_offers = [o for o in country_offers if o["stock"] > 0]
     
     def get_ranking(self):
         """Retourne le classement des entreprises par cash décroissant."""

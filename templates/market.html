@@ -17,16 +17,59 @@
             border-color: #3498db;
             outline: none;
         }
-        .product-box {
-            background: #fdfdfd; 
-            border: 1px solid #ecf0f1; 
-            padding: 10px; 
-            border-radius: 5px; 
-            margin-bottom: 10px;
+        .product-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .product-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            margin: -20px -20px 20px -20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .product-info {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .info-badge {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .stock-badge {
+            background: #ebf5fb;
+            color: #3498db;
+        }
+        .selection-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
         label {
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .demand-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fef5e7;
+            border-left: 4px solid #f39c12;
+            border-radius: 4px;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -51,59 +94,72 @@
     <div class="main-content">
         
         <div style="margin-bottom: 30px;">
-            <h1>Global Sales Strategy</h1>
+            <h1>Sales Strategy - By Product</h1>
             <div style="background-color: #d4e6f1; color: #2980b9; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 5px solid #3498db;">
-                <strong> Global Event:</strong> {{ global_event.event }}
+                <strong>📊 Global Event:</strong> {{ global_event.event }}
+            </div>
+            <div style="background-color: #f9ebea; color: #c0392b; padding: 12px; border-radius: 5px; margin-top: 10px; border-left: 5px solid #e74c3c;">
+                <strong>⚠️ Nouvelle règle :</strong> Chaque produit ne peut être vendu que dans UN SEUL pays
             </div>
         </div>
 
-        <div class="factories-grid">
+        <div style="max-width: 900px;">
             
-            {% for market_country in all_markets %}
-            <div class="factory-card">
-                
-                <div class="card-header">
-                    <h2>{{ market_country }}</h2>
-                    <span class="stats">Target Market</span>
+            {% for product, meta in products_meta.items() %}
+            {% set saved_country = player.sales_decisions.get(product, {}).get('country', '') %}
+            {% set saved_price = player.sales_decisions.get(product, {}).get('price', 0) %}
+            {% set allowed_prices = meta.get('price_options') or meta.get('price_range') or [] %}
+            
+            <div class="product-card">
+                <div class="product-header">
+                    <h2 style="margin: 0;">Product {{ product }}</h2>
+                    <span style="font-size: 1.2em;">📦</span>
                 </div>
 
-                <div style="flex: 1;">
-                    {% for product, meta in products_meta.items() %}
-                    
-                    {% set saved_price = player.sales_decisions.get(market_country, {}).get(product, {}).get('price', 0) %}
-                    {% set allowed_prices = meta.get('price_options') or meta.get('price_range') or [] %}
-                    {% set base_demand = countries_data[market_country]["products"].get(product, {}).get("base_demand", 0) %}
-
-                    <div class="product-box">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                            <b style="color:#2c3e50;">Product {{ product }}</b>
-                            <div style="display:flex; gap:10px;">
-                                <span style="font-size:0.85em; color:#3498db; background:#ebf5fb; padding:3px 8px; border-radius:3px;">
-                                     Stock: {{ player.stock.get(product, 0) }}
-                                </span>
-                                <span style="font-size:0.85em; color:#e67e22; background:#fef5e7; padding:3px 8px; border-radius:3px;">
-                                     Max Demand: {{ base_demand }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 10px;">
-                            <label style="font-size:0.75em; color:#7f8c8d; font-weight:600;">SELLING PRICE</label>
-                            <select class="market-input"
-                                    data-country="{{ market_country }}" 
-                                    data-product="{{ product }}" 
-                                    data-field="price"
-                                    onchange="saveMarketData(this)">
-                                
-                                <option value="0" disabled {% if saved_price == 0 %}selected{% endif %}>-- Not Selling --</option>
-                                {% for p in allowed_prices %}
-                                    <option value="{{ p }}" {% if saved_price == p %}selected{% endif %}>{{ p }} €</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                <div class="product-info">
+                    <div class="info-badge stock-badge">
+                        📊 Stock Available: {{ player.stock.get(product, 0) }} units
                     </div>
-                    {% endfor %}
                 </div>
+
+                <div class="selection-grid">
+                    <!-- Sélection du pays -->
+                    <div>
+                        <label>🌍 Target Country</label>
+                        <select class="market-input"
+                                data-product="{{ product }}" 
+                                data-field="country"
+                                onchange="saveMarketData(this)">
+                            <option value="" {% if saved_country == '' %}selected{% endif %}>-- Not Selling --</option>
+                            {% for country in all_markets %}
+                                <option value="{{ country }}" {% if saved_country == country %}selected{% endif %}>{{ country }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Sélection du prix -->
+                    <div>
+                        <label>💰 Selling Price</label>
+                        <select class="market-input"
+                                data-product="{{ product }}" 
+                                data-field="price"
+                                onchange="saveMarketData(this)">
+                            <option value="0" {% if saved_price == 0 %}selected{% endif %}>-- No Price Set --</option>
+                            {% for p in allowed_prices %}
+                                <option value="{{ p }}" {% if saved_price == p %}selected{% endif %}>{{ p }} €</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Info sur la demande du pays sélectionné -->
+                {% if saved_country and saved_country != '' %}
+                <div class="demand-info">
+                    <strong>📈 {{ saved_country }} Market Info:</strong><br>
+                    Base Demand for Product {{ product }}: 
+                    <strong>{{ countries_data[saved_country]["products"].get(product, {}).get("base_demand", 0) }} units</strong>
+                </div>
+                {% endif %}
 
             </div>
             {% endfor %}
@@ -115,13 +171,16 @@
         function saveMarketData(input) {
             input.style.borderColor = "#f1c40f"; 
 
-            let val = parseInt(input.value); 
+            let val = input.value;
+            // Si c'est le champ prix, convertir en int, sinon laisser comme string (pays)
+            if (input.dataset.field === 'price') {
+                val = parseInt(val);
+            }
 
             fetch('/update_sales_ajax', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    country: input.dataset.country,
                     product: input.dataset.product,
                     field: input.dataset.field,
                     value: val
@@ -132,6 +191,11 @@
                 if(data.status === 'saved') {
                     input.style.borderColor = "#27ae60"; 
                     setTimeout(() => { input.style.borderColor = "#bdc3c7"; }, 800);
+                    
+                    // Si on a changé le pays, recharger la page pour mettre à jour les infos de demande
+                    if(input.dataset.field === 'country') {
+                        setTimeout(() => { location.reload(); }, 1000);
+                    }
                 } else {
                     input.style.borderColor = "#e74c3c";
                 }

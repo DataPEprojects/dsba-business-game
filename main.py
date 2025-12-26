@@ -194,28 +194,33 @@ def modify_lines_ajax():
 
 @app.route('/update_sales_ajax', methods=['POST'])
 def update_sales_ajax():
-    """Sauvegarde les choix Prix et Marketing (depuis les <select>)."""
+    """Sauvegarde les choix Pays et Prix pour chaque produit."""
     player = get_player()
     if not player:
         return jsonify({'error': 'Player not found'}), 400
 
     data = request.json
-    country = data.get('country')
     product = data.get('product')
-    field = data.get('field') # 'price' ou 'marketing'
+    field = data.get('field')  # 'country' ou 'price'
+    value = data.get('value')
     
-    try:
-        value = int(data.get('value'))
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid value'}), 400
-
+    # Validation
+    if not product or not field:
+        return jsonify({'error': 'Missing parameters'}), 400
+    
+    # Pour le prix, valider que c'est un nombre
+    if field == 'price':
+        try:
+            value = int(value)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid price'}), 400
+    
     # Init structure si vide
-    if not hasattr(player, 'sales_decisions'): player.sales_decisions = {}
-    if country not in player.sales_decisions: player.sales_decisions[country] = {}
-    if product not in player.sales_decisions[country]: player.sales_decisions[country][product] = {"price": 0, "marketing": 0}
+    if not hasattr(player, 'sales_decisions'):
+        player.sales_decisions = {}
     
     # Update
-    player.sales_decisions[country][product][field] = value
+    player.set_decision(product, field, value)
 
     return jsonify({'status': 'saved', 'value': value})
 
@@ -272,5 +277,3 @@ def end_turn():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
-
-

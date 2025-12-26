@@ -9,26 +9,24 @@ class Company:
         self.revenue = 0
         self.costs = {}        
         # --- AJOUT POUR LES VENTES ---
-        # Structure : self.sales_decisions[Pays][Produit] = {"price": 0, "marketing": 0}
+        # NOUVELLE STRUCTURE : self.sales_decisions[Produit] = {"country": "...", "price": 0}
+        # Chaque produit ne peut être vendu que dans UN SEUL pays
         self.sales_decisions = {} 
 
-    def get_decision(self, country, product):
-        """Récupère la décision actuelle ou renvoie une valeur par défaut"""
-        if country not in self.sales_decisions:
-            self.sales_decisions[country] = {}
-        
-        if product not in self.sales_decisions[country]:
-            self.sales_decisions[country][product] = {"price": 0, "marketing": 0}
+    def get_decision(self, product):
+        """Récupère la décision actuelle pour un produit ou renvoie une valeur par défaut"""
+        if product not in self.sales_decisions:
+            self.sales_decisions[product] = {"country": "", "price": 0}
             
-        return self.sales_decisions[country][product]
+        return self.sales_decisions[product]
 
-    def set_decision(self, country, product, field, value):
-        """Enregistre une décision (price ou marketing)"""
+    def set_decision(self, product, field, value):
+        """Enregistre une décision (country ou price) pour un produit"""
         # Initialisation si nécessaire
-        self.get_decision(country, product)
+        self.get_decision(product)
         
         # Enregistrement
-        self.sales_decisions[country][product][field] = value
+        self.sales_decisions[product][field] = value
         
     def ensure_all_products(self,products):
         """Pour avoir les stocks de manière dynamique (pour pouvoir en ajouter/modifier en toute sérénité)."""
