@@ -1,9 +1,8 @@
-﻿import json
-from engine.parameters import Parameters
+﻿from engine.parameters import Parameters
 from entities.company import Company
 from entities.factory import Factories, COUNTRY_CONFIG
+from engine.AI_manager import AIManager
 
-# --- CONFIGURATION FIXE (Setup Costs) ---
 SETUP_COSTS = {
     "USA": 40000,
     "China": 25000,
@@ -12,52 +11,48 @@ SETUP_COSTS = {
 
 class World:
     """Coordonne la simulation tour par tour."""
-    def __init__(self, total_turns=20):
+    def __init__(self, total_turns=20, num_ais=5):
         self.parameters = Parameters(total_turns=total_turns)
         self.turn = 1
         self.total_turns = total_turns 
-        self.ai_behaviors = self._load_ai_behaviors()
+        self.ai_manager = AIManager(num_ais=num_ais)
         self.companies = self._initialize_companies()
-        self.sales_history = []  # Historique des ventes du dernier tour
-        
-    def _load_ai_behaviors(self):
-        """Charge les comportements pré-enregistrés des IA."""
-        with open("data/ai_behaviors.json", "r", encoding="utf-8-sig") as f:
-            return json.load(f)
+        self.sales_history = []
     
     def _initialize_companies(self):
-        """Crée le joueur et les 5 IA."""
-        companies = [Company("Player", is_player=True)]
+        """Crée le joueur + les IA"""
+        companies = []
         
-        for ai_name in self.ai_behaviors.keys():
-            companies.append(Company(ai_name, is_player=False))
+        # Joueur humain
+        player = Company("Player", is_player=True)
+        companies.append(player)
         
-        # Initialiser les stocks pour tous les produits
-        all_products = list(self.parameters.get_turn(1)["products_meta"].keys())
-        for company in companies:
-            company.ensure_all_products(all_products)
-            
+        # IA
+        for ai_name, ai_behavior in self.ai_manager.ais.items():
+            company = Company(ai_name, is_player=False, ai_behavior=ai_behavior)
+            companies.append(company)
+        
         return companies
     
     def get_turn_data(self):
         """Renvoie les paramètres du tour actuel."""
         return self.parameters.get_turn(self.turn)
     
-    def _apply_ai_actions(self, turn_number):
-        """Applique les actions pré-enregistrées des IA pour le tour donné."""
+    def _apply_ai_actions(self):
+        """Applique les actions des IA pour le tour courant."""
+        turn_data = self.get_turn_data()
+        
         for company in self.companies:
             if company.is_player:
-                continue  # Le joueur a déjà fait ses choix via le front
+                continue  # Le joueur agit via le front
             
-            ai_name = company.name
-            turn_data = self.ai_behaviors[ai_name]["turns"].get(str(turn_number))
+            ai = company.ai_behavior
             
-            if not turn_data:
-                continue
-            
-            # 1. Acheter des usines
-            for country in turn_data["buy_factories"]:
+            # 1. Acheter une usine
+            if ai.should_buy_factory(self.turn):
+                country = ai.choose_country_for_factory()
                 cost = SETUP_COSTS[country]
+                
                 if company.cash >= cost:
                     company.cash -= cost
                     new_factory = Factories(country, COUNTRY_CONFIG)
@@ -66,54 +61,22 @@ class World:
                     company.factories[country].append(new_factory)
             
             # 2. Allouer les lignes de production
-            for country, products in turn_data["production_lines"].items():
-                if country not in company.factories:
-                    continue
-                    
-                for product, target_lines in products.items():
-                    factories_list = company.factories[country]
-                    current_lines = sum(f.product_lines.get(product, 0) for f in factories_list)
-                    diff = target_lines - current_lines
-                    
-                    if diff > 0:  # Acheter des lignes
-                        for factory in factories_list:
-                            if diff <= 0:
-                                break
-                            can_add = min(diff, factory.free_space)
-                            if can_add > 0:
-                                try:
-                                    cost = factory.modify_lines(product, can_add)
-                                    if company.cash >= cost:
-                                        company.cash -= cost
-                                        diff -= can_add
-                                    else:
-                                        factory.modify_lines(product, -can_add)  # Rollback
-                                        break
-                                except:
-                                    pass
-                    elif diff < 0:  # Vendre des lignes
-                        for factory in factories_list:
-                            if diff >= 0:
-                                break
-                            current_in_factory = factory.product_lines.get(product, 0)
-                            can_remove = min(abs(diff), current_in_factory)
-                            if can_remove > 0:
-                                try:
-                                    cost = factory.modify_lines(product, -can_remove)
-                                    company.cash -= cost  # cost sera négatif (remboursement)
-                                    diff += can_remove
-                                except:
-                                    pass
+            if company.factories:
+                lines = ai.allocate_lines_by_country(company.factories)
+                for country, products in lines.items():
+                    if country in company.factories:
+                        for product, qty in products.items():
+                            company.set_production_lines(country, product, qty)
             
-            # 3. Définir les décisions de vente (pays + prix)
-            sales = turn_data.get("sales", {})
-            for product, decision in sales.items():
-                country = decision.get("country", "")
-                price = decision.get("price", 0)
-                if country:
-                    company.set_decision(product, "country", country)
-                if price > 0:
-                    company.set_decision(product, "price", price)
+            # 3. Fixer prix et pays de vente
+            for product in ["A", "B", "C"]:
+                if product in turn_data["products_meta"]:
+                    prices = turn_data["products_meta"][product]["price_options"]
+                    chosen_price = ai.choose_price(prices)
+                    sales_country = ai.choose_sales_country(product)
+                    
+                    company.set_decision(product, "country", sales_country)
+                    company.set_decision(product, "price", chosen_price)
     
     def _calculate_production(self):
         """Calcule la production et l'ajoute aux stocks."""
@@ -138,25 +101,20 @@ class World:
             company.costs["maintenance"] = total_maintenance
     
     def _resolve_sales(self):
-        """Résout les ventes selon la logique du prix le plus bas.
-        NOUVELLE LOGIQUE : Chaque produit ne peut être vendu que dans UN SEUL pays."""
+        """Résout les ventes selon la logique du prix le plus bas."""
         params = self.get_turn_data()
-        self.sales_history = []  # Reset l'historique pour ce tour
+        self.sales_history = []
         
-        # Pour chaque produit, résoudre les ventes dans le pays où il est commercialisé
         for product in params["products_meta"].keys():
-            
-            # Collecter toutes les offres pour ce produit (company, pays, prix, stock)
             offers = []
+            
             for company in self.companies:
                 decision = company.get_decision(product)
                 country = decision.get("country", "")
                 price = decision.get("price", 0)
                 stock = company.stock.get(product, 0)
                 
-                # Le produit doit avoir un pays assigné, un prix > 0 et du stock
                 if country and price > 0 and stock > 0:
-                    # Vérifier que ce pays existe et qu'il y a de la demande
                     if country in params["countries"]:
                         base_demand = params["countries"][country]["products"].get(product, {}).get("base_demand", 0)
                         if base_demand > 0:
@@ -171,8 +129,6 @@ class World:
             if not offers:
                 continue
             
-            # Grouper les offres par pays (un produit peut être vendu par plusieurs entreprises dans différents pays)
-            # Mais chaque entreprise ne vend son produit que dans UN pays
             offers_by_country = {}
             for offer in offers:
                 country = offer["country"]
@@ -180,25 +136,19 @@ class World:
                     offers_by_country[country] = []
                 offers_by_country[country].append(offer)
             
-            # Pour chaque pays où le produit est commercialisé
             for country, country_offers in offers_by_country.items():
-                base_demand = country_offers[0]["base_demand"]  # Même demande pour tous
-                
-                # Trier par prix croissant
+                base_demand = country_offers[0]["base_demand"]
                 country_offers.sort(key=lambda x: x["price"])
                 
                 remaining_demand = base_demand
                 
-                # Algorithme de vente
                 while remaining_demand > 0 and country_offers:
-                    # Trouver le prix minimum
                     min_price = country_offers[0]["price"]
                     sellers_at_min_price = [o for o in country_offers if o["price"] == min_price]
                     
                     if not sellers_at_min_price:
                         break
                     
-                    # Vente alternée pour les vendeurs au même prix
                     for seller in sellers_at_min_price:
                         if remaining_demand <= 0:
                             break
@@ -206,13 +156,11 @@ class World:
                         qty_to_sell = min(1, seller["stock"], remaining_demand)
                         
                         if qty_to_sell > 0:
-                            # Vendre
                             seller["company"].stock[product] -= qty_to_sell
                             revenue = qty_to_sell * seller["price"]
                             seller["company"].cash += revenue
                             seller["company"].revenue += revenue
                             
-                            # Tracker la vente
                             self.sales_history.append({
                                 "country": country,
                                 "product": product,
@@ -225,7 +173,6 @@ class World:
                             seller["stock"] -= qty_to_sell
                             remaining_demand -= qty_to_sell
                     
-                    # Retirer les vendeurs sans stock
                     country_offers = [o for o in country_offers if o["stock"] > 0]
     
     def get_ranking(self):
@@ -238,13 +185,10 @@ class World:
         """Résout complètement le tour actuel."""
         print(f"--- RESOLVING TURN {self.turn} ---")
         
-        # Passer au tour suivant
-        self.turn += 1
+        # 1. Appliquer les actions IA
+        self._apply_ai_actions()
         
-        # 1. Appliquer les actions IA pour ce tour
-        self._apply_ai_actions(self.turn)
-        
-        # 2. Calculer la production -> stock
+        # 2. Calculer la production
         self._calculate_production()
         
         # 3. Appliquer les coûts de maintenance
@@ -253,12 +197,24 @@ class World:
         # 4. Résoudre les ventes
         self._resolve_sales()
         
-        # 5. Reset des indicateurs pour le prochain tour
+        # 5. Reset et passer au tour suivant
         for company in self.companies:
-            company.reset_all_past_inf()
+            if hasattr(company, 'reset_all_past_inf'):
+                company.reset_all_past_inf()
         
-        print(f"Tour {self.turn} résolu!")
+        self.turn += 1
+        
+        print(f"Tour {self.turn - 1} résolu!")
         print(f"Classement: {self.get_ranking()}")
-
-
-
+    
+    def is_game_over(self):
+        """Vérifie si la partie est terminée."""
+        return self.turn > self.total_turns
+    
+    def get_company(self, name):
+        """Récupère une compagnie par son nom."""
+        return next((c for c in self.companies if c.name == name), None)
+    
+    def get_all_companies(self):
+        """Retourne toutes les compagnies."""
+        return self.companies
