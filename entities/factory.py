@@ -2,24 +2,25 @@ import uuid # Pour générer des ID uniques
 
 COUNTRY_CONFIG = {
     "USA": {
-        "base_line_cost": 130,
-        "efficiency_multiplier": 1.5,
+        "base_line_cost": 130,      # Expensive lines
+        "efficiency_multiplier": 1.5, # Best production (+50%)
         "max_capacity": 20,
-        "maintenance_cost": 400,
+        "maintenance_cost": 400,     # High maintenance
     },
     "China": {
-        "base_line_cost": 80,
-        "efficiency_multiplier": 0.9,
+        "base_line_cost": 80,        # Cheapest lines
+        "efficiency_multiplier": 0.9, # Slower production (-10%)
         "max_capacity": 20,
-        "maintenance_cost": 100,
+        "maintenance_cost": 100,     # Low maintenance
     },
     "France": {
-        "base_line_cost": 100,
-        "efficiency_multiplier": 1.2,
+        "base_line_cost": 100,       # Balanced
+        "efficiency_multiplier": 1.2, # Good production (+20%)
         "max_capacity": 20,
-        "maintenance_cost": 300,
+        "maintenance_cost": 300,     # Balanced maintenance
     },
 }
+
 
 
 class Factories:

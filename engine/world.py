@@ -3,17 +3,19 @@ from engine.parameters import Parameters
 from entities.company import Company
 from entities.factory import Factories, COUNTRY_CONFIG
 
+# --- CONFIGURATION FIXE (Setup Costs) ---
 SETUP_COSTS = {
-    "USA": 10000,
-    "China": 5000,
-    "France": 8000
+    "USA": 40000,
+    "China": 25000,
+    "France": 30000
 }
 
 class World:
     """Coordonne la simulation tour par tour."""
-    def __init__(self):
-        self.parameters = Parameters()
-        self.turn = 1  # On commence au tour 1
+    def __init__(self, total_turns=20):
+        self.parameters = Parameters(total_turns=total_turns)
+        self.turn = 1
+        self.total_turns = total_turns 
         self.ai_behaviors = self._load_ai_behaviors()
         self.companies = self._initialize_companies()
         self.sales_history = []  # Historique des ventes du dernier tour

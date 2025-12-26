@@ -1,17 +1,13 @@
-import json
-import os
+from engine.market_generator import MarketGenerator
 
 class Parameters:
-    """Charge les paramètres du monde à partir des fichiers JSON de /data/parameters."""
-    def __init__(self, folder_path="data/parameters"):
-        self.turns = {}
-        "prends chaque fichiers nommé JSON dans le folder"
-        for file in sorted(os.listdir(folder_path)):
-            if file.endswith(".json"):
-                turn_number = int(file.split("_")[1].split(".")[0])
-                with open(os.path.join(folder_path, file), "r", encoding="utf-8") as f:
-                    self.turns[turn_number] = json.load(f)
+    def __init__(self, total_turns=20):
+        self.total_turns = total_turns
+        self.generator = MarketGenerator(total_turns=total_turns)
+        self._cache = {}  # Cache les tours générés
 
-    def get_turn(self, turn_number: int) -> dict:
-        """Renvoie le dictionnaire de paramètres pour le tour demandé."""
-        return self.turns.get(turn_number, self.turns[max(self.turns.keys())])
+    def get_turn(self, turn_number):
+        """Retourne les paramètres du tour (généré ou en cache)."""
+        if turn_number not in self._cache:
+            self._cache[turn_number] = self.generator.get_turn_data(turn_number)
+        return self._cache[turn_number]

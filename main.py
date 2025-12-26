@@ -6,14 +6,14 @@ app = Flask(__name__)
 app.secret_key = "super_secret_key" 
 
 # 1. INITIALISATION DU MONDE
-world = World()
+world = World(total_turns=10)
 
 # --- CONFIGURATION FIXE (Setup Costs) ---
 # Note : Si ça devient dynamique un jour, on le bougera dans le JSON
 SETUP_COSTS = {
-    "USA": 10000,
-    "China": 5000,
-    "France": 8000
+    "USA": 40000,
+    "China": 25000,
+    "France": 30000
 }
 
 # --- HELPERS ---
