@@ -90,7 +90,7 @@
                         <div style="display:flex; gap:10px; margin-top: 10px;">
                             
                             <div style="flex:1;">
-                                <label style="font-size:0.7em; color:#7f8c8d;">PRICE (€)</label>
+                                <label style="font-size:0.7em; color:#7f8c8d;">PRICE ($)</label>
                                 <select class="market-input"
                                         data-country="{{ market_country }}" 
                                         data-product="{{ product }}" 
@@ -99,23 +99,23 @@
                                     
                                     <option value="0" disabled {% if saved_price == 0 %}selected{% endif %}>--</option>
                                     {% for p in allowed_prices %}
-                                        <option value="{{ p }}" {% if saved_price == p %}selected{% endif %}>{{ p }} €</option>
+                                        <option value="{{ p }}" {% if saved_price == p %}selected{% endif %}>{{ p }} $</option>
                                     {% endfor %}
                                 </select>
                             </div>
 
                             <div style="flex:1;">
-                                <label style="font-size:0.7em; color:#7f8c8d;">MARKETING (€)</label>
+                                <label style="font-size:0.7em; color:#7f8c8d;">MARKETING ($)</label>
                                 <select class="market-input" 
                                        data-country="{{ market_country }}" 
                                        data-product="{{ product }}" 
                                        data-field="marketing"
                                        onchange="saveMarketData(this)">
                                        
-                                    <option value="0" {% if saved_marketing == 0 %}selected{% endif %}>0 €</option>
+                                    <option value="0" {% if saved_marketing == 0 %}selected{% endif %}>0 $</option>
                                     
                                     {% for m in allowed_marketing %}
-                                        <option value="{{ m }}" {% if saved_marketing == m %}selected{% endif %}>{{ m }} €</option>
+                                        <option value="{{ m }}" {% if saved_marketing == m %}selected{% endif %}>{{ m }} $</option>
                                     {% endfor %}
                                 </select>
                             </div>

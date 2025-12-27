@@ -49,7 +49,7 @@ def calculate_global_stats(player):
 
     return total_maint, total_prod
 
-# --- ROUTES D'AFFICHAGE ---
+# Display routes - Page rendering
 
 @app.route("/")
 def index():
@@ -106,7 +106,7 @@ def market():
         **get_sidebar_data(player)
     )
 
-# --- ACTIONS & AJAX ---
+# Action routes - User interactions and AJAX endpoints
 
 @app.route("/buy_factory", methods=["POST"])
 def buy_factory():
@@ -202,7 +202,7 @@ def update_sales_ajax():
     data = request.json
     country = data.get('country')
     product = data.get('product')
-    field = data.get('field') # 'price' ou 'marketing'
+    field = data.get('field')  # 'price' or 'marketing'
     
     try:
         value = int(data.get('value'))
@@ -219,7 +219,7 @@ def update_sales_ajax():
 
     return jsonify({'status': 'saved', 'value': value})
 
-# --- ROUTE POUR AFFICHER LA PAGE OVERVIEW ---
+# Turn overview route
 @app.route("/overview")
 def view_overview():
     player = get_player()
@@ -229,7 +229,7 @@ def view_overview():
         **get_sidebar_data(player)
     )
 
-# --- ROUTE D'ACTION (Le bouton rouge) ---
+# End turn action route
 @app.route("/end_turn", methods=["POST"])
 def end_turn():
     # Execute turn resolution logic in game engine
