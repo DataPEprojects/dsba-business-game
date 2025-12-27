@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
+<!-- Factory Management Page: Display and purchase factories in different countries -->
 <head>
     <link rel="stylesheet" href="/static/style.css">
     <title>Factory Management</title>
 </head>
 <body>
 
+    <!-- Left sidebar: navigation menu and cash display -->
     <div class="sidebar">
         <h2>Market Sim</h2>
         <a href="/factories" class="menu-item active">
@@ -22,6 +24,7 @@
         </div>
     </div>
 
+    <!-- Main content: flash messages and factory cards grid -->
     <div class="main-content">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -40,6 +43,7 @@
 
         <div class="factories-grid">
             
+            <!-- Loop through each country and display factory information -->
             {% for country_name, config in country_config.items() %}
                 {% set factories_here = player_factories.get(country_name, []) %}
                 {% set count = factories_here|length %}

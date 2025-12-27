@@ -8,12 +8,11 @@ class Company:
         self.stock = {}
         self.revenue = 0
         self.costs = {}        
-        # --- AJOUT POUR LES VENTES ---
-        # Structure : self.sales_decisions[Pays][Produit] = {"price": 0, "marketing": 0}
+        # Sales decisions: sales_decisions[Country][Product] = {"price": 0, "marketing": 0}
         self.sales_decisions = {} 
 
     def get_decision(self, country, product):
-        """Récupère la décision actuelle ou renvoie une valeur par défaut"""
+        """Retrieves the current decision or returns a default value."""
         if country not in self.sales_decisions:
             self.sales_decisions[country] = {}
         
@@ -23,25 +22,20 @@ class Company:
         return self.sales_decisions[country][product]
 
     def set_decision(self, country, product, field, value):
-        """Enregistre une décision (price ou marketing)"""
-        # Initialisation si nécessaire
+        """Records a decision (price or marketing)."""
+        # Initialize if necessary
         self.get_decision(country, product)
         
-        # Enregistrement
+        # Save the value
         self.sales_decisions[country][product][field] = value
         
     def ensure_all_products(self,products):
-        """Pour avoir les stocks de manière dynamique (pour pouvoir en ajouter/modifier en toute sérénité)."""
+        """Ensures all products exist in stock dictionary for dynamic product handling."""
         for p in products:
             self.stock.setdefault(p,0)
 
     def reset_all_past_inf(self):
-        """Cette fonction reset les indicateurs uniques à chaque tours"""
+        """Resets turn-specific indicators at the start of each turn."""
         self.revenue = 0
-        #liste élémentaire pour l'instant, à voir par la suite si nous en ajoutons
+        # Initialize costs tracking for this turn
         self.costs = {"production": 0, "maintenance": 0, "marketing": 0, "transport": 0, "taxes": 0}
-
-
-    # servait à print l'état des entreprises, peut être réactivé si nécessaire
-    # def __repr__(self):
-    #     return f"<Company {self.name} | Cash={self.cash:.1f}>"

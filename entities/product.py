@@ -1,5 +1,5 @@
-"vide pour l'instant, j'imaginais des trucs spécifiques aux produits"
-# note personnelle, le choix du prix sera probablement hardcodé dans les règles du tour JSON"
+# Product configuration (currently placeholder for future product-specific features)
+# Note: Pricing choices are defined in turn JSON configuration files
 PRODUCTS_CONFIG = {
     "A": {
         "base_cost": 10,

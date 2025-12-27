@@ -1,32 +1,31 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+﻿from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from engine.world import World
 from entities.factory import Factories, COUNTRY_CONFIG
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key" 
 
-# 1. INITIALISATION DU MONDE
+# Initialize the game world and companies
 world = World()
 
-# --- CONFIGURATION FIXE (Setup Costs) ---
-# Note : Si ça devient dynamique un jour, on le bougera dans le JSON
+# Fixed costs for establishing factories in each country
 SETUP_COSTS = {
     "USA": 10000,
     "China": 5000,
     "France": 8000
 }
 
-# --- HELPERS ---
+# Helper functions for data processing
 
 def get_player():
-    """Récupère l'objet Company du joueur humain."""
+    """Retrieves the human player's Company object."""
     for c in world.companies:
         if c.is_player:
             return c
     return None
 
 def get_sidebar_data(player):
-    """Données communes pour la sidebar (Cash, Tour, Usines)."""
+    """Returns common data for the sidebar: cash, turn number, and factory count."""
     count = sum(len(factories) for factories in player.factories.values())
     return {
         "factory_count": count,
@@ -35,7 +34,7 @@ def get_sidebar_data(player):
     }
 
 def calculate_global_stats(player):
-    """Calcule la maintenance totale et la production totale par produit."""
+    """Calculates total maintenance costs and total production output per product."""
     total_maint = 0
     total_prod = {} 
 
@@ -72,7 +71,7 @@ def view_production():
     player = get_player()
     global_maint, global_prod = calculate_global_stats(player)
     
-    # DYNAMIQUE : On charge les clés produits du tour actuel (ex: A, B, C...)
+    # Load dynamic product list from current turn configuration
     current_params = world.get_turn_data()
     dynamic_products_list = list(current_params["products_meta"].keys())
 
@@ -90,17 +89,17 @@ def view_production():
 def market():
     player = get_player()
     
-    # 1. Chargement du JSON du tour
+    # Load current turn parameters from JSON
     current_params = world.get_turn_data()
     
-    # 2. Liste de TOUS les pays (Marchés potentiels)
+    # Get all available markets (countries)
     all_markets = list(current_params["countries"].keys())
 
     return render_template(
         'market.html', 
         player=player,
         all_markets=all_markets,
-        # On passe les métadonnées pour générer les <select>
+        # Pass metadata to generate dropdown menus
         products_meta=current_params["products_meta"], 
         marketing_meta=current_params["marketing_meta"],
         global_event=current_params["global"],
@@ -131,7 +130,7 @@ def buy_factory():
 
 @app.route('/modify_lines_ajax', methods=['POST'])
 def modify_lines_ajax():
-    """Gère l'ajout/retrait de lignes de production."""
+    """Handles adding or removing production lines via AJAX."""
     player = get_player()
     if not player:
         return jsonify({'error': 'Game not initialized'}), 400
@@ -151,7 +150,7 @@ def modify_lines_ajax():
     
     cost = 0
     try:
-        # Logique d'ajout (chercher de la place) ou de retrait (chercher des lignes)
+        # Find available factory space to add lines, or find lines to remove
         if qty > 0:
             target = next((f for f in factories_in_country if f.free_space >= qty), None)
             if not target: raise ValueError("Max capacity reached for this country!")
@@ -161,14 +160,14 @@ def modify_lines_ajax():
             if not target: raise ValueError("No lines to remove.")
             cost = target.modify_lines(product, qty)
 
-        # Vérif argent
+        # Verify player has enough cash, rollback if not
         if cost > 0 and player.cash < cost:
-            target.modify_lines(product, -qty) # Rollback
+            target.modify_lines(product, -qty)
             return jsonify({'error': 'Not enough cash'}), 400
             
         player.cash -= cost
 
-        # Recalculs pour le frontend
+        # Recalculate values to return to frontend
         country_lines = sum(f.product_lines.get(product, 0) for f in factories_in_country)
         country_maintenance = sum(f.maintenance_cost for f in factories_in_country)
         country_capacity_used = sum(f.total_lines_used for f in factories_in_country)
@@ -195,7 +194,7 @@ def modify_lines_ajax():
 
 @app.route('/update_sales_ajax', methods=['POST'])
 def update_sales_ajax():
-    """Sauvegarde les choix Prix et Marketing (depuis les <select>)."""
+    """Saves price and marketing choices from dropdown selections."""
     player = get_player()
     if not player:
         return jsonify({'error': 'Player not found'}), 400
@@ -210,12 +209,12 @@ def update_sales_ajax():
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid value'}), 400
 
-    # Init structure si vide
+    # Initialize data structure if empty
     if not hasattr(player, 'sales_decisions'): player.sales_decisions = {}
     if country not in player.sales_decisions: player.sales_decisions[country] = {}
     if product not in player.sales_decisions[country]: player.sales_decisions[country][product] = {"price": 0, "marketing": 0}
     
-    # Update
+    # Update the field with new value
     player.sales_decisions[country][product][field] = value
 
     return jsonify({'status': 'saved', 'value': value})
@@ -233,13 +232,13 @@ def view_overview():
 # --- ROUTE D'ACTION (Le bouton rouge) ---
 @app.route("/end_turn", methods=["POST"])
 def end_turn():
-    # 1. On lance la résolution dans le moteur
+    # Execute turn resolution logic in game engine
     world.resolve_turn()
     
-    # 2. Message de succès
+    # Display success message
     flash(f"Turn completed! Welcome to Turn {world.turn}.", "success")
     
-    # 3. On redirige vers le début du cycle (les usines) pour le nouveau tour
+    # Redirect to factories page to start new turn
     return redirect(url_for('view_factories'))
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<!-- Market Strategy Page: Configure price and marketing for products in each market -->
 <head>
     <link rel="stylesheet" href="/static/style.css">
     <title>Market Strategy</title>
@@ -32,6 +33,7 @@
 </head>
 <body>
 
+    <!-- Left sidebar: navigation menu, cash, and turn display -->
     <div class="sidebar">
         <h2>Market Sim</h2>
         <a href="/factories" class="menu-item">
@@ -47,6 +49,7 @@
         </div>
     </div>
 
+    <!-- Main content: global event banner and market configuration cards -->
     <div class="main-content">
         
         <div style="margin-bottom: 30px;">
@@ -58,6 +61,7 @@
 
         <div class="factories-grid">
             
+            <!-- Loop through each market (country) -->
             {% for market_country in all_markets %}
             <div class="factory-card">
                 
@@ -67,6 +71,7 @@
                 </div>
 
                 <div style="flex: 1;">
+                    <!-- Loop through each product and create price/marketing selectors -->
                     {% for product, meta in products_meta.items() %}
                     
                     {% set saved_price = player.sales_decisions.get(market_country, {}).get(product, {}).get('price', 0) %}
@@ -126,6 +131,7 @@
     </div>
 
     <script>
+        // Save market data (price/marketing) via AJAX when user changes selection
         function saveMarketData(input) {
             input.style.borderColor = "#f1c40f"; 
 

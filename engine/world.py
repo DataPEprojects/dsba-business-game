@@ -3,16 +3,15 @@ from entities.company import Company
 from entities.product import PRODUCTS_CONFIG
 
 class World:
-    """Coordonne la simulation tour par tour."""
+    """Manages the turn-by-turn simulation and game state."""
     def __init__(self):
         self.parameters = Parameters()
         self.turn = 1
         self.companies = [
             Company("test_comp_1 = player",is_player=True),
             Company("test_comp_2 = AI")
-            # Company("test_comp_2")
         ]
-    # outdated=> c'était l'acienne version pour test; j'aii séparé avec un .py dédié 
+    
     def get_turn_data(self):
         return self.parameters.get_turn(self.turn)
     
@@ -62,35 +61,34 @@ class World:
     
     def _apply_marketing_costs(self):
         """
-        Applique les budgets marketing décidés par les joueurs aux coûts réels.
+        Applies marketing budgets decided by players to actual costs.
         """
         for company in self.companies:
-            # On parcourt toutes les décisions de vente enregistrées
+            # Process all recorded sales decisions
             for country, products_decisions in company.sales_decisions.items():
                 for product, decision in products_decisions.items():
                     
                     budget = decision.get("marketing", 0)
                     
                     if budget > 0:
-                        # 1. On déduit du cash
+                        # Deduct from cash
                         company.cash -= budget
                         
-                        # 2. On alimente TON dictionnaire de coûts
+                        # Track in costs dictionary
                         company.costs["marketing"] += budget
 
     def resolve_turn(self):
             """
-            Logique de fin de tour V0.
+            Executes end-of-turn logic (V0 implementation).
             """
             print(f"--- RESOLVING TURN {self.turn} ---")
             
-            # 1. Incrémenter le tour
+            # Increment turn counter
             self.turn += 1
             
-            # 2. (V0) On vérifie juste que le JSON charge, sinon on gère l'erreur
+            # Verify that configuration exists for next turn
             try:
-                # Juste pour tester que le fichier existe, on ne fait rien avec pour l'instant
+                # Check if turn configuration file exists
                 _ = self.parameters.get_turn(self.turn)
             except Exception as e:
-                print(f"⚠️ Warning: Pas de config pour le tour {self.turn}. Fin du contenu demo ?")
-                # Optionnel : self.turn -= 1 si tu veux bloquer
+                print(f"⚠️ Warning: No configuration for turn {self.turn}. End of demo content?")

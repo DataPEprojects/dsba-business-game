@@ -2,10 +2,10 @@ import json
 import os
 
 class Parameters:
-    """Charge les paramètres du monde à partir des fichiers JSON de /data/parameters."""
+    """Loads game parameters from JSON files in /data/parameters."""
     def __init__(self, folder_path="data/parameters"):
         self.turns = {}
-        "prends chaque fichiers nommé JSON dans le folder"
+        # Load each JSON file from the folder
         for file in sorted(os.listdir(folder_path)):
             if file.endswith(".json"):
                 turn_number = int(file.split("_")[1].split(".")[0])
@@ -13,5 +13,5 @@ class Parameters:
                     self.turns[turn_number] = json.load(f)
 
     def get_turn(self, turn_number: int) -> dict:
-        """Renvoie le dictionnaire de paramètres pour le tour demandé."""
+        """Returns the parameter dictionary for the requested turn."""
         return self.turns.get(turn_number, self.turns[max(self.turns.keys())])
