@@ -6,28 +6,27 @@ app = Flask(__name__)
 app.secret_key = "super_secret_key" 
 TOTAL_TURNS = 2
 NUM_AIS = 5
-# 1. INITIALISATION DU MONDE
+# Initialize game world with default settings
 world = World(total_turns=TOTAL_TURNS,num_ais=NUM_AIS)
 
-# --- CONFIGURATION FIXE (Setup Costs) ---
-# Note : Si ça devient dynamique un jour, on le bougera dans le JSON
+# Fixed factory setup costs by country
 SETUP_COSTS = {
     "USA": 40000,
     "China": 25000,
     "France": 30000
 }
 
-# --- HELPERS ---
+# Helper functions
 
 def get_player():
-    """Récupère l'objet Company du joueur humain."""
+    """Returns the human player's Company object."""
     for c in world.companies:
         if c.is_player:
             return c
     return None
 
 def get_sidebar_data(player):
-    """Données communes pour la sidebar (Cash, Tour, Usines)."""
+    """Returns common sidebar data (cash, turn, factories)."""
     count = sum(len(factories) for factories in player.factories.values())
     return {
         "factory_count": count,
@@ -36,7 +35,7 @@ def get_sidebar_data(player):
     }
 
 def calculate_global_stats(player):
-    """Calcule la maintenance totale et la production totale par produit."""
+    """Calculates total maintenance and production by product."""
     total_maint = 0
     total_prod = {} 
 
@@ -51,18 +50,18 @@ def calculate_global_stats(player):
 
     return total_maint, total_prod
 
-# --- ROUTES D'AFFICHAGE ---
+# Display routes
 
 
 @app.route("/", methods=["GET"])
 def index():
-    # Page de départ: configuration du nom, des tours et du nombre d'IA
+    # Start page for game configuration
     return render_template("start.html")
 
 @app.route("/start", methods=["POST"])
 def start_game():
     global world
-    # Lire le formulaire
+    # Read form data and validate
     company_name = request.form.get("company_name", "Player").strip() or "Player"
     try:
         total_turns = int(request.form.get("total_turns", "12"))
@@ -73,16 +72,16 @@ def start_game():
     except (ValueError, TypeError):
         num_ais = 5
 
-    # Bornes
+    # Apply validation bounds
     if total_turns < 1: total_turns = 1
     if total_turns > 50: total_turns = 50
     if num_ais < 0: num_ais = 0
     if num_ais > 10: num_ais = 10
 
-    # Réinitialiser le monde selon la configuration choisie
+    # Reinitialize world with chosen configuration
     world = World(total_turns=total_turns, num_ais=num_ais)
 
-    # Mettre à jour le nom du joueur
+    # Update player name
     player = get_player()
     if player:
         player.name = company_name
@@ -112,11 +111,11 @@ def view_production():
     player = get_player()
     global_maint, global_prod = calculate_global_stats(player)
     
-    # DYNAMIQUE : On charge les clés produits du tour actuel (ex: A, B, C...)
+    # Load current turn products dynamically
     current_params = world.get_turn_data()
     dynamic_products_list = list(current_params["products_meta"].keys())
 
-    # NOUVEAU : Précalculer les lignes de production par pays et par produit
+    # Precompute production lines by country and product
     production_by_country = {}
     for country, factories_list in player.factories.items():
         production_by_country[country] = {}
@@ -141,10 +140,10 @@ def market():
         return redirect(url_for("game_over"))
     player = get_player()
     
-    # 1. Chargement du JSON du tour
+    # Load current turn data
     current_params = world.get_turn_data()
     
-    # 2. Liste de TOUS les pays (Marchés potentiels)
+    # Get all available markets
     all_markets = list(current_params["countries"].keys())
 
     return render_template(
@@ -157,7 +156,7 @@ def market():
         **get_sidebar_data(player)
     )
 
-# --- ACTIONS & AJAX ---
+# Action routes and AJAX endpoints
 
 @app.route("/buy_factory", methods=["POST"])
 def buy_factory():
@@ -181,7 +180,7 @@ def buy_factory():
 
 @app.route('/modify_lines_ajax', methods=['POST'])
 def modify_lines_ajax():
-    """Gère l'ajout/retrait de lignes de production (delta ou absolu)."""
+    """Handles adding/removing production lines (delta or absolute mode)."""
     player = get_player()
     if not player:
         return jsonify({'error': 'Game not initialized'}), 400
@@ -197,14 +196,14 @@ def modify_lines_ajax():
 
     try:
         if mode == 'absolute':
-            # Saisie directe: calcule le delta
+            # Direct input: calculate delta
             desired = int(data.get('value', 0))
             if desired < 0:
                 return jsonify({'error': 'Value cannot be negative'}), 400
             current_total = sum(f.product_lines.get(product, 0) for f in factories_in_country)
             qty = desired - current_total
         else:
-            # Delta mode (boutons +/-)
+            # Delta mode (+/- buttons)
             qty = int(data.get('qty'))
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid quantity'}), 400
@@ -212,7 +211,7 @@ def modify_lines_ajax():
     cost = 0
     try:
         if qty > 0:
-            # Distribuer l'ajout sur TOUTES les usines du pays
+            # Distribute additions across all factories in the country
             remaining = qty
             total_available = sum(f.free_space for f in factories_in_country)
             if remaining > total_available:
@@ -227,7 +226,7 @@ def modify_lines_ajax():
                     remaining -= take
         
         elif qty < 0:
-            # Retirer des lignes existantes
+            # Remove existing lines
             remaining = -qty
             for f in factories_in_country:
                 if remaining <= 0:
@@ -240,9 +239,9 @@ def modify_lines_ajax():
             if remaining > 0:
                 raise ValueError("No lines to remove.")
 
-        # Vérif argent
+        # Verify sufficient cash
         if cost > 0 and player.cash < cost:
-            # Rollback: annuler ce qui a été fait
+            # Rollback changes if insufficient funds
             if qty > 0:
                 for f in factories_in_country:
                     current = f.product_lines.get(product, 0)
@@ -278,28 +277,28 @@ def modify_lines_ajax():
 
 @app.route('/update_sales_ajax', methods=['POST'])
 def update_sales_ajax():
-    """Sauvegarde les choix Pays et Prix pour chaque produit."""
+    """Saves country and price choices for each product."""
     player = get_player()
     if not player:
         return jsonify({'error': 'Player not found'}), 400
 
     data = request.json
     product = data.get('product')
-    field = data.get('field')  # 'country' ou 'price'
+    field = data.get('field')  # 'country' or 'price'
     value = data.get('value')
     
-    # Validation
+    # Validate input
     if not product or not field:
         return jsonify({'error': 'Missing parameters'}), 400
     
-    # Pour le prix, valider que c'est un nombre
+    # Validate price is a number
     if field == 'price':
         try:
             value = int(value)
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid price'}), 400
     
-    # Init structure si vide
+    # Initialize structure if empty
     if not hasattr(player, 'sales_decisions'):
         player.sales_decisions = {}
     
@@ -308,7 +307,7 @@ def update_sales_ajax():
 
     return jsonify({'status': 'saved', 'value': value})
 
-# --- ROUTE POUR AFFICHER LA PAGE OVERVIEW ---
+# Overview page route
 @app.route("/overview")
 def view_overview():
     if world.is_game_over():
@@ -316,10 +315,10 @@ def view_overview():
     player = get_player()
     ranking = world.get_ranking()
     
-    # Préparer les données pour le tableau à double entrée
+    # Prepare sales matrix data
     current_params = world.get_turn_data()
     
-    # Agréger les ventes par (country, product, company)
+    # Aggregate sales by country, product, and company
     sales_matrix = {}
     for sale in world.sales_history:
         key = (sale["country"], sale["product"])
@@ -334,10 +333,10 @@ def view_overview():
         company_name = sale["company_name"]
         sales_matrix[key]["sales"][company_name] = sales_matrix[key]["sales"].get(company_name, 0) + sale["quantity"]
     
-    # Convertir en liste pour le template
+    # Convert to list for template
     sales_table = list(sales_matrix.values())
     
-    # Liste de toutes les entreprises
+    # Get all company names
     all_companies = [c.name for c in world.companies]
     
     return render_template(
@@ -349,17 +348,17 @@ def view_overview():
         **get_sidebar_data(player)
     )
 
-# --- ROUTE D'ACTION (Le bouton rouge) ---
+# End turn action route
 @app.route("/end_turn", methods=["POST"])
 def end_turn():
-    # 1. On lance la résolution dans le moteur
+    # Execute turn resolution
     world.resolve_turn()
     if world.is_game_over():
         return redirect(url_for("game_over"))
-    # 2. Message de succès
+    # Show success message
     flash(f"Turn completed! Welcome to Turn {world.turn}.", "success")
     
-    # 3. On redirige vers le début du cycle (les usines) pour le nouveau tour
+    # Redirect to factories page for new turn
     return redirect(url_for('view_factories'))
 
 @app.route("/gameover")

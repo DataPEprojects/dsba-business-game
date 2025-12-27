@@ -1,1 +1,2 @@
-"Vide pour l'instant, je comptais inclure divers éléments hardcodés dans les futures versions. Exemple = aléatoirement une pandémie dès tour 5."
+"# Empty for now - planned for future versions to include hardcoded events
+# Example: random pandemic starting at turn 5"

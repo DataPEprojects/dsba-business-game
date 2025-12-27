@@ -1,5 +1,6 @@
-import uuid # Pour générer des ID uniques
+import uuid # Generate unique IDs
 
+# Configuration for each country: costs, efficiency, capacity, and maintenance
 COUNTRY_CONFIG = {
     "USA": {
         "base_line_cost": 130,      # Expensive lines
@@ -24,8 +25,9 @@ COUNTRY_CONFIG = {
 
 
 class Factories:
+    """Represents a production facility with capacity, efficiency, and maintenance costs."""
     def __init__(self, country, config):
-        self.id = str(uuid.uuid4())[:8] # Ex: "a1b2c3d4"
+        self.id = str(uuid.uuid4())[:8] # e.g., "a1b2c3d4"
         self.country = country
         self.config = config[country]
         self.capacity = self.config["max_capacity"]
@@ -34,19 +36,21 @@ class Factories:
     
     @property
     def total_lines_used(self):
+        """Total number of production lines currently in use."""
         return sum(self.product_lines.values())
 
     @property
     def free_space(self):
+        """Available capacity for new production lines."""
         return self.capacity - self.total_lines_used
 
-    # --- CORRECTION ICI ---
-    # Ajout de @property pour que 'maintenance_cost' soit traité comme une variable
+    # Property to calculate maintenance dynamically
     @property
     def maintenance_cost(self):
         return self.total_lines_used * self.config["maintenance_cost"]
 
     def modify_lines(self, product, qty):
+        """Adds or removes production lines for a product. Returns cost (positive=purchase, negative=refund)."""
         current = self.product_lines.get(product, 0)
         
         # Check constraints
@@ -57,5 +61,5 @@ class Factories:
             
         self.product_lines[product] = current + qty
 
-        # On retourne le coût de l'opération (positif si achat, négatif si vente/remboursement)
+        # Return operation cost (positive if buying, negative if selling/refunding)
         return qty * self.config["base_line_cost"]

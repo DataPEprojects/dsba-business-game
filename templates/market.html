@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html>
+<!-- TEMPLATE: Market strategy - Choose selling prices and target countries for each product -->
 <head>
     <link rel="stylesheet" href="/static/style.css">
     <title>Market Strategy</title>
@@ -120,7 +121,7 @@
                 </div>
 
                 <div class="selection-grid">
-                    <!-- Sélection du pays -->
+                    <!-- Country selection -->
                     <div>
                         <label>🌍 Target Country</label>
                         <select class="market-input"
@@ -134,7 +135,7 @@
                         </select>
                     </div>
 
-                    <!-- Sélection du prix -->
+                    <!-- Price selection -->
                     <div>
                         <label>💰 Selling Price</label>
                         <select class="market-input"
@@ -149,7 +150,7 @@
                     </div>
                 </div>
 
-                <!-- Info sur la demande de tous les pays -->
+                <!-- Market demand information for all countries -->
                 <div class="demand-info">
                     <strong>📈 Market Demand by Country:</strong><br>
                     {% for country in all_markets %}
@@ -166,11 +167,12 @@
     </div>
 
     <script>
+        // JavaScript: Auto-saves market decisions (country and price) via AJAX
         function saveMarketData(input) {
             input.style.borderColor = "#f1c40f"; 
 
             let val = input.value;
-            // Si c'est le champ prix, convertir en int, sinon laisser comme string (pays)
+            // If price field, convert to int; otherwise keep as string (country)
             if (input.dataset.field === 'price') {
                 val = parseInt(val);
             }

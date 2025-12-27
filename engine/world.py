@@ -3,6 +3,7 @@ from entities.company import Company
 from entities.factory import Factories, COUNTRY_CONFIG
 from engine.AI_manager import AIManager
 
+# Initial cost to build a factory in each country
 SETUP_COSTS = {
     "USA": 40000,
     "China": 25000,
@@ -10,7 +11,7 @@ SETUP_COSTS = {
 }
 
 class World:
-    """Coordonne la simulation tour par tour."""
+    """Main game engine coordinating turn-by-turn simulation with production, sales, and AI actions."""
     def __init__(self, total_turns=20, num_ais=5):
         self.parameters = Parameters(total_turns=total_turns)
         self.turn = 1
@@ -20,14 +21,14 @@ class World:
         self.sales_history = []
     
     def _initialize_companies(self):
-        """Crée le joueur + les IA"""
+        """Creates the player and AI companies."""
         companies = []
         
-        # Joueur humain
+        # Human player
         player = Company("Player", is_player=True)
         companies.append(player)
         
-        # IA
+        # AI companies
         for ai_name, ai_behavior in self.ai_manager.ais.items():
             company = Company(ai_name, is_player=False, ai_behavior=ai_behavior)
             companies.append(company)
@@ -35,20 +36,20 @@ class World:
         return companies
     
     def get_turn_data(self):
-        """Renvoie les paramètres du tour actuel."""
+        """Returns parameters for the current turn."""
         return self.parameters.get_turn(self.turn)
     
     def _apply_ai_actions(self):
-        """Applique les actions des IA pour le tour courant."""
+        """Executes AI company actions for the current turn."""
         turn_data = self.get_turn_data()
         
         for company in self.companies:
             if company.is_player:
-                continue  # Le joueur agit via le front
+                continue  # Player acts via frontend
             
             ai = company.ai_behavior
             
-            # 1. Acheter une usine
+            # 1. Buy a factory
             if ai.should_buy_factory(self.turn):
                 country = ai.choose_country_for_factory()
                 cost = SETUP_COSTS[country]
@@ -60,7 +61,7 @@ class World:
                         company.factories[country] = []
                     company.factories[country].append(new_factory)
             
-            # 2. Allouer les lignes de production
+            # 2. Allocate production lines
             if company.factories:
                 lines = ai.allocate_lines_by_country(company.factories)
                 for country, products in lines.items():
@@ -68,7 +69,7 @@ class World:
                         for product, qty in products.items():
                             company.set_production_lines(country, product, qty)
             
-            # 3. Fixer prix et pays de vente
+            # 3. Set price and sales country
             for product in ["A", "B", "C"]:
                 if product in turn_data["products_meta"]:
                     prices = turn_data["products_meta"][product]["price_options"]
@@ -79,7 +80,7 @@ class World:
                     company.set_decision(product, "price", chosen_price)
     
     def _calculate_production(self):
-        """Calcule la production et l'ajoute aux stocks."""
+        """Calculates production and adds it to inventory."""
         for company in self.companies:
             for country, factories_list in company.factories.items():
                 efficiency = COUNTRY_CONFIG[country]["efficiency_multiplier"]
@@ -90,7 +91,7 @@ class World:
                         company.stock[product] = company.stock.get(product, 0) + production
     
     def _apply_maintenance_costs(self):
-        """Déduit les coûts de maintenance de toutes les usines."""
+        """Deducts maintenance costs from all factories."""
         for company in self.companies:
             total_maintenance = 0
             for factories_list in company.factories.values():
@@ -101,7 +102,7 @@ class World:
             company.costs["maintenance"] = total_maintenance
     
     def _resolve_sales(self):
-        """Résout les ventes selon la logique du prix le plus bas."""
+        """Resolves sales based on lowest price wins logic."""
         params = self.get_turn_data()
         self.sales_history = []
         
@@ -176,45 +177,45 @@ class World:
                     country_offers = [o for o in country_offers if o["stock"] > 0]
     
     def get_ranking(self):
-        """Retourne le classement des entreprises par cash décroissant."""
+        """Returns company ranking by descending cash."""
         ranked = sorted(self.companies, key=lambda c: c.cash, reverse=True)
         return [{"rank": i+1, "name": c.name, "cash": c.cash, "is_player": c.is_player} 
                 for i, c in enumerate(ranked)]
     
     def resolve_turn(self):
-        """Résout complètement le tour actuel."""
+        """Fully resolves the current turn."""
         print(f"--- RESOLVING TURN {self.turn} ---")
         
-        # 1. Appliquer les actions IA
+        # 1. Apply AI actions
         self._apply_ai_actions()
         
-        # 2. Calculer la production
+        # 2. Calculate production
         self._calculate_production()
         
-        # 3. Appliquer les coûts de maintenance
+        # 3. Apply maintenance costs
         self._apply_maintenance_costs()
         
-        # 4. Résoudre les ventes
+        # 4. Resolve sales
         self._resolve_sales()
         
-        # 5. Reset et passer au tour suivant
+        # 5. Reset and move to next turn
         for company in self.companies:
             if hasattr(company, 'reset_all_past_inf'):
                 company.reset_all_past_inf()
         
         self.turn += 1
         
-        print(f"Tour {self.turn - 1} résolu!")
-        print(f"Classement: {self.get_ranking()}")
+        print(f"Turn {self.turn - 1} resolved!")
+        print(f"Ranking: {self.get_ranking()}")
     
     def is_game_over(self):
-        """Vérifie si la partie est terminée."""
+        """Checks if the game is finished."""
         return self.turn > self.total_turns
     
     def get_company(self, name):
-        """Récupère une compagnie par son nom."""
+        """Retrieves a company by name."""
         return next((c for c in self.companies if c.name == name), None)
     
     def get_all_companies(self):
-        """Retourne toutes les compagnies."""
+        """Returns all companies."""
         return self.companies

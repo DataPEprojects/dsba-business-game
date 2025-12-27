@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<!-- TEMPLATE: Production management - Allocate production lines per product and country -->
 <head>
     <link rel="stylesheet" href="/static/style.css">
     <title>Production Control</title>
@@ -64,7 +65,7 @@
         <div class="factories-grid">
             {% for country_name, factories_list in player_factories.items() %}
                 {% if factories_list|length > 0 %}
-                    {# --- CORRECTION ICI : method remplacé par attribute --- #}
+                    {# Sum factory attributes for total capacity and maintenance #}
                     {% set total_cap = factories_list|sum(attribute='capacity') %}
                     {% set used_cap = factories_list|sum(attribute='total_lines_used') %}
                     {% set country_maint = factories_list|sum(attribute='maintenance_cost') %}
@@ -124,6 +125,7 @@
     </div>
 
     <script>
+        // JavaScript: Handles dynamic production line allocation via AJAX
         let turnOpeningCosts = 0;
 
         function updateCountryLines(country, product, qty) {
@@ -136,38 +138,38 @@
             .then(data => {
                 if (data.error) alert(data.error);
                 else {
-                    // 1. Mise à jour de la carte PAYS (Consolidée)
+                    // Update country-specific display (consolidated card)
                     document.getElementById(`lines-${country}-${product}`).innerText = data.new_lines;
                     document.getElementById(`prod-${country}-${product}`).innerText = data.new_production;
                     document.getElementById(`cap-used-${country}`).innerText = data.new_capacity_used;
                     document.getElementById(`maint-${country}`).innerText = data.new_maintenance;
                     
-                    // 2. Mise à jour du HEADER GLOBAL
+                    // Update global header values
                     // Maintenance
                     document.getElementById(`header-total-maint`).innerText = data.global_maint;
 
-                    // Cumul Opening Costs
+                    // Accumulate opening costs for this turn
                     if (data.last_op_cost > 0) {
                         turnOpeningCosts += data.last_op_cost;
                         document.getElementById('header-total-opening').innerText = turnOpeningCosts;
                     }
 
-                    // Production par produit
+                    // Update production for each product
                     for (const [prodName, prodValue] of Object.entries(data.global_prod)) {
                          const el = document.getElementById(`header-prod-${prodName}`);
                          if(el) el.innerText = prodValue;
                     }
 
-                    // 3. Mise à jour du CASH Sidebar
+                    // Update sidebar cash display
                     document.getElementById(`global-cash`).innerText = data.new_cash;
                 }
             });
         }
 
-        // Click to edit: convert span to input
+        // Click-to-edit: Convert production line display to input field
         document.querySelectorAll('.line-display').forEach((span) => {
             span.addEventListener('click', () => {
-                if (span.querySelector('input')) return; // already editing
+                if (span.querySelector('input')) return; // Already editing
                 
                 const country = span.dataset.country;
                 const product = span.dataset.product;

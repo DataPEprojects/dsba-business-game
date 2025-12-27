@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<!-- TEMPLATE: Game over page - Display final rankings and restart option -->
 <head>
     <meta charset="utf-8">
     <title>Game Over — Final Results</title>
@@ -17,15 +18,15 @@
           {% endif %}
         {% endwith %}
 
-        <h1 style="color:#27ae60; margin-bottom:10px;">🏁 Fin de partie</h1>
-        <p style="color:#7f8c8d; margin-bottom:24px;">Classement final des entreprises.</p>
+        <h1 style="color:#27ae60; margin-bottom:10px;">🏁 Game Over</h1>
+        <p style="color:#7f8c8d; margin-bottom:24px;">Final company rankings.</p>
 
         <table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
             <thead>
                 <tr style="background:#f4f4f4;">
-                    <th style="padding:8px; text-align:left;">Rang</th>
-                    <th style="padding:8px; text-align:left;">Entreprise</th>
-                    <th style="padding:8px; text-align:right;">Trésorerie</th>
+                    <th style="padding:8px; text-align:left;">Rank</th>
+                    <th style="padding:8px; text-align:left;">Company</th>
+                    <th style="padding:8px; text-align:right;">Cash</th>
                     <th style="padding:8px; text-align:left;">Type</th>
                 </tr>
             </thead>
@@ -35,14 +36,14 @@
                     <td style="padding:8px;">{{ entry.rank }}</td>
                     <td style="padding:8px;">{{ entry.name }}</td>
                     <td style="padding:8px; text-align:right;">${{ entry.cash }}</td>
-                    <td style="padding:8px;">{% if entry.is_player %}Joueur{% else %}IA{% endif %}</td>
+                    <td style="padding:8px;">{% if entry.is_player %}Player{% else %}AI{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
         <a href="/" class="btn" style="padding:10px 20px; background:#27ae60; color:white; border-radius:6px; text-decoration:none;">
-            Recommencer
+            Start New Game
         </a>
     </div>
 </body>

@@ -1,4 +1,5 @@
 class Company:
+    """Represents a company (player or AI) with factories, inventory, and financial data."""
     def __init__(self, name, is_player=False, ai_behavior=None):
         self.name = name
         self.is_player = is_player
@@ -9,39 +10,37 @@ class Company:
         self.stock = {}       # { "A": qty, ... }
         self.revenue = 0
 
-        # Indicateurs financiers (reset chaque tour)
+        # Financial indicators (reset each turn)
         self.costs = {"production": 0, "maintenance": 0, "marketing": 0, "transport": 0, "taxes": 0}
 
-        # Décisions de vente par produit : {"A": {"country": "", "price": 0}, ...}
+        # Sales decisions per product
         self.sales_decisions = {}
 
     def ensure_all_products(self, products):
-        """Initialise les clés de stock pour les produits fournis."""
+        """Initializes stock entries for provided products."""
         for p in products:
             self.stock.setdefault(p, 0)
 
     def reset_all_past_inf(self):
-        """Reset des indicateurs spécifiques à chaque tour."""
+        """Resets turn-specific indicators."""
         self.revenue = 0
         self.costs = {"production": 0, "maintenance": 0, "marketing": 0, "transport": 0, "taxes": 0}
 
-    # --- Décisions (compatibilité avec world.py) ---
+    # Decision management (compatibility with world.py)
     def set_decision(self, product, field, value):
-        """Enregistre la décision (pays ou prix) pour un produit."""
+        """Records decision (country or price) for a product."""
         if product not in self.sales_decisions:
             self.sales_decisions[product] = {"country": "", "price": 0}
         self.sales_decisions[product][field] = value
 
     def get_decision(self, product):
-        """Retourne la décision pour un produit (country, price)."""
+        """Returns the decision for a product (country, price)."""
         return self.sales_decisions.get(product, {"country": "", "price": 0})
 
-    # --- Gestion des usines / lignes (compatible avec Factories.modify_lines) ---
+    # Factory and production line management
     def set_production_lines(self, country, product, qty):
-        """
-        Ajuste le nombre total de lignes pour `product` dans `country` en répartissant
-        l'ajustement sur les usines existantes. Les coûts/recettes sont appliqués à self.cash.
-        Silencieux en cas d'erreur (world.py appelle sans crash).
+        """Adjusts total lines for product in country across factories.
+        Applies costs/revenues to self.cash. Silent on errors (for world.py).
         """
         if country not in self.factories or not self.factories[country]:
             return
@@ -50,7 +49,7 @@ class Company:
         current_total = sum(f.product_lines.get(product, 0) for f in factories)
         diff = qty - current_total
 
-        # Augmenter les lignes
+        # Increase lines
         if diff > 0:
             remaining = diff
             for f in factories:
@@ -63,7 +62,7 @@ class Company:
                     cost = f.modify_lines(product, can_add)
                 except Exception:
                     continue
-                # Vérif argent
+                # Verify sufficient cash
                 if cost > 0 and self.cash < cost:
                     # rollback
                     try:
@@ -71,11 +70,11 @@ class Company:
                     except Exception:
                         pass
                     break
-                # appliquer coût
+                # Apply cost
                 self.cash -= cost
                 remaining -= can_add
 
-        # Réduire les lignes
+        # Decrease lines
         elif diff < 0:
             remaining_to_remove = -diff
             for f in factories:
@@ -89,14 +88,13 @@ class Company:
                     cost = f.modify_lines(product, -to_remove)
                 except Exception:
                     continue
-                # cost sera négatif => subtracting it adds cash
+                # Cost is negative => subtracting adds cash
                 self.cash -= cost
                 remaining_to_remove -= to_remove
 
     def buy_factory(self, country, cost=0, factory_obj=None):
-        """
-        Ajoute une usine au pays. Si `cost` fourni (>0), on débite self.cash.
-        Si factory_obj fourni, on l'utilise ; sinon on crée une nouvelle Factories.
+        """Adds a factory to the country. Deducts cost if provided.
+        Creates new Factories object if factory_obj not provided.
         """
         from entities.factory import Factories, COUNTRY_CONFIG
 

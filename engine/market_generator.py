@@ -1,21 +1,22 @@
 import random
 
 class MarketGenerator:
+    """Generates dynamic market conditions including demand, prices, and economic events."""
     def __init__(self,total_turns=20):
         self.total_turns = total_turns
         self.base_config = {
             "products": {
-                # A: Low Cost - Volume MONSTRUEUX (Nécessite ~10 usines pour tout couvrir)
+                # A: Low Cost - Massive volume (requires ~10 factories to cover)
                 "A": {
                     "base_price": 18, 
                     "base_demand": {"France": 5000, "USA": 15000, "China": 25000} 
                 },
-                # B: Standard - Volume conséquent
+                # B: Standard - Significant volume
                 "B": {
                     "base_price": 100, 
                     "base_demand": {"France": 2500, "USA": 6000, "China": 3000} 
                 },
-                # C: Luxe - Niche très rentable
+                # C: Luxury - Very profitable niche
                 "C": {
                     "base_price": 230, 
                     "base_demand": {"France": 800, "USA": 1500, "China": 400} 
@@ -29,7 +30,7 @@ class MarketGenerator:
         }
 
     def get_turn_data(self, turn):
-        """Génère les données du tour dynamiquement."""
+        """Generates dynamic turn data based on current turn."""
         multiplier, event = self._get_climate(turn)
         
         data = {
@@ -41,7 +42,7 @@ class MarketGenerator:
             "tax_matrix": self._generate_tax_matrix()
         }
 
-        # Génération Prix et Demande
+        # Generate prices and demand
         for prod, info in self.base_config["products"].items():
             center_price = int(info["base_price"] * multiplier)
             spread = 3 if prod == "A" else 5
@@ -68,7 +69,7 @@ class MarketGenerator:
         return data
     
     def _get_climate(self, turn):
-        """Détermine le climat économique selon le tour avec randomness."""
+        """Determines economic climate based on turn with randomness."""
         # Phase 1: Early stability (turns 1-2)
         if turn <= 2:
             base_multiplier = 1.0 + (turn * 0.02)
@@ -104,7 +105,7 @@ class MarketGenerator:
         return round(base_multiplier, 2), event
 
     def _generate_transport_matrix(self):
-        """Génère la matrice de transport."""
+        """Generates transport cost matrix between countries."""
         return {
             "France": {"France": 0.00, "USA": 0.05, "China": 0.25},
             "USA": {"France": 0.05, "USA": 0.00, "China": 0.20},
@@ -112,7 +113,7 @@ class MarketGenerator:
         }
 
     def _generate_tax_matrix(self):
-        """Génère la matrice de taxes."""
+        """Generates tax matrix between countries."""
         return {
             "France": {"France": 0.05, "USA": 0.08, "China": 0.15},
             "USA": {"France": 0.08, "USA": 0.04, "China": 0.12},

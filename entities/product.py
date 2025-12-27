@@ -1,5 +1,5 @@
-"vide pour l'instant, j'imaginais des trucs spécifiques aux produits"
-# note personnelle, le choix du prix sera probablement hardcodé dans les règles du tour JSON"
+# Planned for product-specific features
+# Product configuration with base costs and output rates per production line
 PRODUCTS_CONFIG = {
     "A": {
         "base_cost": 10,

@@ -1,6 +1,7 @@
 import random
 
 class AIBehavior:
+    """Defines AI company behavior based on personality type (aggressive, balanced, conservative, premium, volume)."""
     def __init__(self, name, personality):
         self.name = name
         self.personality = personality
@@ -32,14 +33,15 @@ class AIBehavior:
             self.preferred_countries = ["China"]
     
     def should_buy_factory(self, turn):
-        """Turn 1 obligatoire, après c'est probabiliste"""
+        """Turn 1 mandatory, then probabilistic based on expand_rate."""
         return turn == 1 or random.random() < self.expand_rate
     
     def choose_country_for_factory(self):
+        """Randomly selects a preferred country for factory expansion."""
         return random.choice(self.preferred_countries)
     
     def allocate_lines_by_country(self, factories_owned):
-        """Allouer les lignes par usine et produit"""
+        """Allocates production lines per factory and product."""
         allocation = {}
         capacity_per_factory = 20
         
@@ -57,7 +59,7 @@ class AIBehavior:
         return allocation
     
     def choose_price(self, available_prices):
-        """Choisir un prix parmi les options du marché"""
+        """Chooses a price from available market options based on personality."""
         sorted_prices = sorted(available_prices)
         n = len(sorted_prices)
         
@@ -73,7 +75,7 @@ class AIBehavior:
             return sorted_prices[-1]
     
     def choose_sales_country(self, product):
-        """Choisir le pays pour vendre ce produit"""
+        """Chooses the country to sell this product in."""
         if product == "C":
             return random.choice(["USA", "France"])
         elif product == "A":
@@ -83,17 +85,18 @@ class AIBehavior:
 
 
 class AIManager:
+    """Manages all AI companies in the simulation."""
     PERSONALITIES = ["aggressive", "balanced", "conservative", "premium", "volume"]
     
     def __init__(self, num_ais=5):
-        # Cap à 10 max, pas de négatif
+        # 10 max, no negative values
         self.num_ais = max(0, min(int(num_ais), 10))
         self.ais = self._generate_ais()
     
     def _generate_ais(self):
-        """Génère jusqu'à 10 IA.
-        - 0..4: noms fixes + personnalités cyclées
-        - 5..9: noms fixes + personnalités aléatoires
+        """Generates up to 10 AI companies.
+        - 0..4: fixed names + cycled personalities
+        - 5..9: fixed names + random personalities
         """
         import random
         ais = {}
@@ -113,7 +116,9 @@ class AIManager:
         return ais
     
     def get_ai(self, name):
+        """Retrieves an AI by name."""
         return self.ais.get(name)
     
     def get_all_ais(self):
+        """Returns list of all AI behavior objects."""
         return list(self.ais.values())
