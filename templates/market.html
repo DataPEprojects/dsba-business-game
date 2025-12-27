@@ -149,7 +149,7 @@
                     </div>
                 </div>
 
-                <!-- Info sur la demande de tous les pays -->
+                <!-- Market demand information by country -->
                 <div class="demand-info">
                     <strong>📈 Market Demand by Country:</strong><br>
                     {% for country in all_markets %}
@@ -170,7 +170,7 @@
             input.style.borderColor = "#f1c40f"; 
 
             let val = input.value;
-            // Si c'est le champ prix, convertir en int, sinon laisser comme string (pays)
+            // If price field, convert to int, otherwise keep as string (country)
             if (input.dataset.field === 'price') {
                 val = parseInt(val);
             }

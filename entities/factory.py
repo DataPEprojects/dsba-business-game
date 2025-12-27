@@ -1,4 +1,4 @@
-import uuid # Pour générer des ID uniques
+import uuid
 
 COUNTRY_CONFIG = {
     "USA": {
@@ -40,8 +40,6 @@ class Factories:
     def free_space(self):
         return self.capacity - self.total_lines_used
 
-    # --- CORRECTION ICI ---
-    # Ajout de @property pour que 'maintenance_cost' soit traité comme une variable
     @property
     def maintenance_cost(self):
         return self.total_lines_used * self.config["maintenance_cost"]
@@ -57,5 +55,5 @@ class Factories:
             
         self.product_lines[product] = current + qty
 
-        # On retourne le coût de l'opération (positif si achat, négatif si vente/remboursement)
+        # Return operation cost (positive for purchase, negative for sale/refund)
         return qty * self.config["base_line_cost"]

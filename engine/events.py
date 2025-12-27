@@ -1,1 +1,1 @@
-"Vide pour l'instant, je comptais inclure divers éléments hardcodés dans les futures versions. Exemple = aléatoirement une pandémie dès tour 5."
+"""Placeholder for future hardcoded events. Example: random pandemic from turn 5."""

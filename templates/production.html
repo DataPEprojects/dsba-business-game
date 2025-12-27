@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<!-- Production Control Page: Manage production lines allocation across factories and products -->
 <head>
     <link rel="stylesheet" href="/static/style.css">
     <title>Production Control</title>
@@ -64,8 +65,7 @@
         <div class="factories-grid">
             {% for country_name, factories_list in player_factories.items() %}
                 {% if factories_list|length > 0 %}
-                    {# --- CORRECTION ICI : method remplacé par attribute --- #}
-                    {% set total_cap = factories_list|sum(attribute='capacity') %}
+
                     {% set used_cap = factories_list|sum(attribute='total_lines_used') %}
                     {% set country_maint = factories_list|sum(attribute='maintenance_cost') %}
 
@@ -84,7 +84,7 @@
 
                         <div class="production-grid">
                             {% for product in all_products %}
-                                {# Utiliser les données précalculées depuis Python #}
+                                {# Use precalculated data from Python #}
                                 {% set total_lines_for_product = production_by_country[country_name][product] %}
 
                                 <div class="line-control">
@@ -129,29 +129,29 @@
             .then(data => {
                 if (data.error) alert(data.error);
                 else {
-                    // 1. Mise à jour de la carte PAYS (Consolidée)
+                    // 1. Update country card (consolidated)
                     document.getElementById(`lines-${country}-${product}`).innerText = data.new_lines;
                     document.getElementById(`prod-${country}-${product}`).innerText = data.new_production;
                     document.getElementById(`cap-used-${country}`).innerText = data.new_capacity_used;
                     document.getElementById(`maint-${country}`).innerText = data.new_maintenance;
                     
-                    // 2. Mise à jour du HEADER GLOBAL
+                    // 2. Update global header
                     // Maintenance
                     document.getElementById(`header-total-maint`).innerText = data.global_maint;
 
-                    // Cumul Opening Costs
+                    // Cumulative opening costs
                     if (data.last_op_cost > 0) {
                         turnOpeningCosts += data.last_op_cost;
                         document.getElementById('header-total-opening').innerText = turnOpeningCosts;
                     }
 
-                    // Production par produit
+                    // Production per product
                     for (const [prodName, prodValue] of Object.entries(data.global_prod)) {
                          const el = document.getElementById(`header-prod-${prodName}`);
                          if(el) el.innerText = prodValue;
                     }
 
-                    // 3. Mise à jour du CASH Sidebar
+                    // 3. Update cash in sidebar
                     document.getElementById(`global-cash`).innerText = data.new_cash;
                 }
             });

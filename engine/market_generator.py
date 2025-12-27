@@ -17,7 +17,7 @@ class MarketGenerator:
         }
 
     def get_turn_data(self, turn):
-        """Génère les données du tour dynamiquement."""
+        """Generates turn data dynamically."""
         multiplier, event = self._get_climate(turn)
         
         data = {
@@ -29,7 +29,7 @@ class MarketGenerator:
             "tax_matrix": self._generate_tax_matrix()
         }
 
-        # Génération Prix et Demande
+        # Generate prices and demand
         for prod, info in self.base_config["products"].items():
             center_price = int(info["base_price"] * multiplier)
             spread = 3 if prod == "A" else 5
@@ -56,7 +56,7 @@ class MarketGenerator:
         return data
     
     def _get_climate(self, turn):
-        """Détermine le climat économique selon le tour avec randomness."""
+        """Determines economic climate based on turn number with randomness."""
         # Phase 1: Early stability (turns 1-2)
         if turn <= 2:
             base_multiplier = 1.0 + (turn * 0.02)
@@ -92,7 +92,7 @@ class MarketGenerator:
         return round(base_multiplier, 2), event
 
     def _generate_transport_matrix(self):
-        """Génère la matrice de transport."""
+        """Generates transport cost matrix."""
         return {
             "France": {"France": 0.00, "USA": 0.05, "China": 0.25},
             "USA": {"France": 0.05, "USA": 0.00, "China": 0.20},
@@ -100,7 +100,7 @@ class MarketGenerator:
         }
 
     def _generate_tax_matrix(self):
-        """Génère la matrice de taxes."""
+        """Generates tax matrix."""
         return {
             "France": {"France": 0.05, "USA": 0.08, "China": 0.15},
             "USA": {"France": 0.08, "USA": 0.04, "China": 0.12},

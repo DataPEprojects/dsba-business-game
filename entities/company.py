@@ -8,20 +8,19 @@ class Company:
         self.stock = {}
         self.revenue = 0
         self.costs = {}        
-        # --- AJOUT POUR LES VENTES ---
-        # NOUVELLE STRUCTURE : self.sales_decisions[Produit] = {"country": "...", "price": 0}
-        # Chaque produit ne peut être vendu que dans UN SEUL pays
+        # Sales decisions structure: sales_decisions[Product] = {"country": "...", "price": 0}
+        # Each product can only be sold in ONE country
         self.sales_decisions = {} 
 
     def get_decision(self, product):
-        """Récupère la décision actuelle pour un produit ou renvoie une valeur par défaut"""
+        """Gets current decision for a product or returns default values."""
         if product not in self.sales_decisions:
             self.sales_decisions[product] = {"country": "", "price": 0}
             
         return self.sales_decisions[product]
 
     def set_decision(self, product, field, value):
-        """Enregistre une décision (country ou price) pour un produit"""
+        """Records a decision (country or price) for a product."""
         # Initialisation si nécessaire
         self.get_decision(product)
         
@@ -29,17 +28,16 @@ class Company:
         self.sales_decisions[product][field] = value
         
     def ensure_all_products(self,products):
-        """Pour avoir les stocks de manière dynamique (pour pouvoir en ajouter/modifier en toute sérénité)."""
+        """Initializes stock for all products dynamically."""
         for p in products:
             self.stock.setdefault(p,0)
 
     def reset_all_past_inf(self):
-        """Cette fonction reset les indicateurs uniques à chaque tours"""
+        """Resets turn-specific indicators (revenue and costs)."""
         self.revenue = 0
-        #liste élémentaire pour l'instant, à voir par la suite si nous en ajoutons
         self.costs = {"production": 0, "maintenance": 0, "marketing": 0, "transport": 0, "taxes": 0}
 
 
-    # servait à print l'état des entreprises, peut être réactivé si nécessaire
+    # For debugging: prints company status (can be reactivated if needed)
     # def __repr__(self):
     #     return f"<Company {self.name} | Cash={self.cash:.1f}>"
