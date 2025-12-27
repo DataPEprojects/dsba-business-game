@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Game Over — Final Results</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="main-content" style="max-width:900px; margin:auto; padding-top:30px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div style="padding:15px; margin-bottom:20px; border-radius:6px; background: {{ '#e74c3c' if category=='error' else '#27ae60' }}; color:white;">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <h1 style="color:#27ae60; margin-bottom:10px;">🏁 Fin de partie</h1>
+        <p style="color:#7f8c8d; margin-bottom:24px;">Classement final des entreprises.</p>
+
+        <table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+            <thead>
+                <tr style="background:#f4f4f4;">
+                    <th style="padding:8px; text-align:left;">Rang</th>
+                    <th style="padding:8px; text-align:left;">Entreprise</th>
+                    <th style="padding:8px; text-align:right;">Trésorerie</th>
+                    <th style="padding:8px; text-align:left;">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in ranking %}
+                <tr {% if entry.is_player %}style="background:#eafaf1; font-weight:bold;"{% endif %}>
+                    <td style="padding:8px;">{{ entry.rank }}</td>
+                    <td style="padding:8px;">{{ entry.name }}</td>
+                    <td style="padding:8px; text-align:right;">${{ entry.cash }}</td>
+                    <td style="padding:8px;">{% if entry.is_player %}Joueur{% else %}IA{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="/" class="btn" style="padding:10px 20px; background:#27ae60; color:white; border-radius:6px; text-decoration:none;">
+            Recommencer
+        </a>
+    </div>
+</body>
+</html>

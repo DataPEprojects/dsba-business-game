@@ -86,17 +86,29 @@ class AIManager:
     PERSONALITIES = ["aggressive", "balanced", "conservative", "premium", "volume"]
     
     def __init__(self, num_ais=5):
-        self.num_ais = num_ais
+        # Cap à 10 max, pas de négatif
+        self.num_ais = max(0, min(int(num_ais), 10))
         self.ais = self._generate_ais()
     
     def _generate_ais(self):
-        """Génère les IA avec des personalities distinctes"""
+        """Génère jusqu'à 10 IA.
+        - 0..4: noms fixes + personnalités cyclées
+        - 5..9: noms fixes + personnalités aléatoires
+        """
+        import random
         ais = {}
-        names = ["AI_Alpha", "AI_Beta", "AI_Gamma", "AI_Delta", "AI_Epsilon"]
+        base_names = [
+            "AI_Alpha", "AI_Beta", "AI_Gamma", "AI_Delta", "AI_Epsilon",
+            "AI_Zeta", "AI_Eta", "AI_Theta", "AI_Iota", "AI_Kappa"
+        ]
         
         for i in range(self.num_ais):
-            personality = self.PERSONALITIES[i % len(self.PERSONALITIES)]
-            ais[names[i]] = AIBehavior(names[i], personality)
+            name = base_names[i]
+            if i < 5:
+                personality = self.PERSONALITIES[i % len(self.PERSONALITIES)]
+            else:
+                personality = random.choice(self.PERSONALITIES)
+            ais[name] = AIBehavior(name, personality)
         
         return ais
     

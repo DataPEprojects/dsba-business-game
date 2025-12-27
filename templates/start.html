@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Start Game</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="main-content" style="max-width:640px; margin:auto; padding-top:40px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div style="padding:12px; margin-bottom:16px; border-radius:6px; background: {{ '#e74c3c' if category=='error' else '#27ae60' }}; color:white;">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <h1 style="margin-bottom:8px;">Market Simulator</h1>
+        <p style="color:#7f8c8d; margin-bottom:24px;">Configure your game and start the simulation.</p>
+
+        <form action="/start" method="POST" style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:20px;">
+            <div style="margin-bottom:16px;">
+                <label for="company_name" style="display:block; font-weight:600; margin-bottom:6px;">Company name</label>
+                <input id="company_name" name="company_name" type="text" placeholder="Your Company" required
+                       style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label for="total_turns" style="display:block; font-weight:600; margin-bottom:6px;">Number of turns</label>
+                <input id="total_turns" name="total_turns" type="number" min="1" max="50" step="1" value="12" required
+                       style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+            </div>
+
+            <div style="margin-bottom:24px;">
+                <label for="num_ais" style="display:block; font-weight:600; margin-bottom:6px;">Number of AIs</label>
+                <select id="num_ais" name="num_ais" required
+                        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                    {% for i in range(0, 11) %}
+                        <option value="{{ i }}" {% if i == 5 %}selected{% endif %}>{{ i }}</option>
+                    {% endfor %}
+                </select>
+                <p style="color:#7f8c8d; font-size:0.9em; margin-top:8px;">Supported range: 0 to 10 AI opponents.</p>
+            </div>
+
+            <button type="submit" class="btn" style="padding:10px 20px; background:#27ae60; color:white; border:none; border-radius:6px;">
+                Start Game
+            </button>
+        </form>
+    </div>
+</body>
+</html>

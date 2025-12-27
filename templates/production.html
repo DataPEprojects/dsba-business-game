@@ -98,7 +98,14 @@
                                     </div>
                                     
                                     <button class="line-btn" onclick="updateCountryLines('{{ country_name }}', '{{ product }}', -1)">-</button>
-                                    <span class="line-display" id="lines-{{ country_name }}-{{ product }}">{{ total_lines_for_product }}</span>
+                                    <span 
+                                        class="line-display" 
+                                        id="lines-{{ country_name }}-{{ product }}"
+                                        data-country="{{ country_name }}"
+                                        data-product="{{ product }}"
+                                        style="cursor:text; padding:4px 6px; min-width:40px; display:inline-block; text-align:center;"
+                                        title="Click to edit"
+                                    >{{ total_lines_for_product }}</span>
                                     <button class="line-btn" onclick="updateCountryLines('{{ country_name }}', '{{ product }}', 1)">+</button>
                                 </div>
                             {% endfor %}
@@ -156,6 +163,84 @@
                 }
             });
         }
+
+        // Click to edit: convert span to input
+        document.querySelectorAll('.line-display').forEach((span) => {
+            span.addEventListener('click', () => {
+                if (span.querySelector('input')) return; // already editing
+                
+                const country = span.dataset.country;
+                const product = span.dataset.product;
+                const current = parseInt(span.textContent, 10);
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '0';
+                input.step = '1';
+                input.value = current;
+                input.style.width = '60px';
+                input.style.textAlign = 'center';
+                input.style.padding = '4px 6px';
+
+                span.textContent = '';
+                span.appendChild(input);
+                input.focus();
+                input.select();
+
+                const applyChange = async () => {
+                    const newVal = Math.max(0, parseInt(input.value || '0', 10));
+                    if (newVal === current) {
+                        input.remove();
+                        span.textContent = current;
+                        return;
+                    }
+
+                    try {
+                        const resp = await fetch('/modify_lines_ajax', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                country, 
+                                product, 
+                                mode: 'absolute', 
+                                value: newVal 
+                            })
+                        });
+                        const data = await resp.json();
+                        if (!resp.ok) throw new Error(data.error);
+
+                        input.remove();
+                        span.textContent = data.new_lines;
+                        document.getElementById(`prod-${country}-${product}`).innerText = data.new_production;
+                        document.getElementById(`cap-used-${country}`).innerText = data.new_capacity_used;
+                        document.getElementById(`maint-${country}`).innerText = data.new_maintenance;
+                        document.getElementById('header-total-maint').innerText = data.global_maint;
+                        if (data.last_op_cost > 0) {
+                            turnOpeningCosts += data.last_op_cost;
+                            document.getElementById('header-total-opening').innerText = turnOpeningCosts;
+                        }
+                        for (const [prodName, prodValue] of Object.entries(data.global_prod)) {
+                            const el = document.getElementById(`header-prod-${prodName}`);
+                            if (el) el.innerText = prodValue;
+                        }
+                        document.getElementById('global-cash').innerText = data.new_cash;
+                    } catch (err) {
+                        alert(err.message);
+                        input.remove();
+                        span.textContent = current;
+                    }
+                };
+
+                input.addEventListener('blur', applyChange);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') applyChange();
+                    if (e.key === 'Escape') {
+                        input.remove();
+                        span.textContent = current;
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

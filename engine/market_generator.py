@@ -5,9 +5,21 @@ class MarketGenerator:
         self.total_turns = total_turns
         self.base_config = {
             "products": {
-                "A": {"base_price": 18, "base_demand": {"France": 1200, "USA": 2000, "China": 1800}},
-                "B": {"base_price": 100, "base_demand": {"France": 400, "USA": 500, "China": 200}},
-                "C": {"base_price": 230, "base_demand": {"France": 100, "USA": 150, "China": 50}}
+                # A: Low Cost - Volume MONSTRUEUX (Nécessite ~10 usines pour tout couvrir)
+                "A": {
+                    "base_price": 18, 
+                    "base_demand": {"France": 5000, "USA": 15000, "China": 25000} 
+                },
+                # B: Standard - Volume conséquent
+                "B": {
+                    "base_price": 100, 
+                    "base_demand": {"France": 2500, "USA": 6000, "China": 3000} 
+                },
+                # C: Luxe - Niche très rentable
+                "C": {
+                    "base_price": 230, 
+                    "base_demand": {"France": 800, "USA": 1500, "China": 400} 
+                }
             },
             "countries": {
                 "France": {"integration_bonus": 0.10},

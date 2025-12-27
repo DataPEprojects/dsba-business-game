@@ -4,9 +4,10 @@ from entities.factory import Factories, COUNTRY_CONFIG
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key" 
-
+TOTAL_TURNS = 2
+NUM_AIS = 5
 # 1. INITIALISATION DU MONDE
-world = World(total_turns=10,num_ais=5)
+world = World(total_turns=TOTAL_TURNS,num_ais=NUM_AIS)
 
 # --- CONFIGURATION FIXE (Setup Costs) ---
 # Note : Si ça devient dynamique un jour, on le bougera dans le JSON
@@ -52,12 +53,49 @@ def calculate_global_stats(player):
 
 # --- ROUTES D'AFFICHAGE ---
 
-@app.route("/")
+
+@app.route("/", methods=["GET"])
 def index():
-    return redirect(url_for('view_factories'))
+    # Page de départ: configuration du nom, des tours et du nombre d'IA
+    return render_template("start.html")
+
+@app.route("/start", methods=["POST"])
+def start_game():
+    global world
+    # Lire le formulaire
+    company_name = request.form.get("company_name", "Player").strip() or "Player"
+    try:
+        total_turns = int(request.form.get("total_turns", "12"))
+    except (ValueError, TypeError):
+        total_turns = 12
+    try:
+        num_ais = int(request.form.get("num_ais", "5"))
+    except (ValueError, TypeError):
+        num_ais = 5
+
+    # Bornes
+    if total_turns < 1: total_turns = 1
+    if total_turns > 50: total_turns = 50
+    if num_ais < 0: num_ais = 0
+    if num_ais > 10: num_ais = 10
+
+    # Réinitialiser le monde selon la configuration choisie
+    world = World(total_turns=total_turns, num_ais=num_ais)
+
+    # Mettre à jour le nom du joueur
+    player = get_player()
+    if player:
+        player.name = company_name
+
+    flash(f"Game started: {company_name} | turns={total_turns}, AI={num_ais}", "success")
+    return redirect(url_for("view_factories"))
+
+
 
 @app.route("/factories")
 def view_factories():
+    if world.is_game_over():
+        return redirect(url_for("game_over"))
     player = get_player()
     return render_template(
         "factories.html",
@@ -69,6 +107,8 @@ def view_factories():
 
 @app.route("/production")
 def view_production():
+    if world.is_game_over():
+        return redirect(url_for("game_over"))
     player = get_player()
     global_maint, global_prod = calculate_global_stats(player)
     
@@ -97,6 +137,8 @@ def view_production():
 
 @app.route('/market')
 def market():
+    if world.is_game_over():
+        return redirect(url_for("game_over"))
     player = get_player()
     
     # 1. Chargement du JSON du tour
@@ -139,7 +181,7 @@ def buy_factory():
 
 @app.route('/modify_lines_ajax', methods=['POST'])
 def modify_lines_ajax():
-    """Gère l'ajout/retrait de lignes de production."""
+    """Gère l'ajout/retrait de lignes de production (delta ou absolu)."""
     player = get_player()
     if not player:
         return jsonify({'error': 'Game not initialized'}), 400
@@ -147,36 +189,44 @@ def modify_lines_ajax():
     data = request.json
     country = data.get('country')
     product = data.get('product')
-    
-    try:
-        qty = int(data.get('qty'))
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid quantity'}), 400
+    mode = data.get('mode', 'delta')
 
     factories_in_country = player.factories.get(country, [])
     if not factories_in_country:
         return jsonify({'error': 'No factory found in this country'}), 400
-    
+
+    try:
+        if mode == 'absolute':
+            # Saisie directe: calcule le delta
+            desired = int(data.get('value', 0))
+            if desired < 0:
+                return jsonify({'error': 'Value cannot be negative'}), 400
+            current_total = sum(f.product_lines.get(product, 0) for f in factories_in_country)
+            qty = desired - current_total
+        else:
+            # Delta mode (boutons +/-)
+            qty = int(data.get('qty'))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid quantity'}), 400
+
     cost = 0
     try:
-        # Logique d'ajout (chercher de la place) ou de retrait (chercher des lignes)
         if qty > 0:
             target = next((f for f in factories_in_country if f.free_space >= qty), None)
             if not target: raise ValueError("Max capacity reached for this country!")
             cost = target.modify_lines(product, qty)
-        else:
+        elif qty < 0:
             target = next((f for f in factories_in_country if f.product_lines.get(product, 0) > 0), None)
             if not target: raise ValueError("No lines to remove.")
             cost = target.modify_lines(product, qty)
 
-        # Vérif argent
         if cost > 0 and player.cash < cost:
-            target.modify_lines(product, -qty) # Rollback
+            if qty > 0:
+                target.modify_lines(product, -qty)
             return jsonify({'error': 'Not enough cash'}), 400
             
         player.cash -= cost
 
-        # Recalculs pour le frontend
         country_lines = sum(f.product_lines.get(product, 0) for f in factories_in_country)
         country_maintenance = sum(f.maintenance_cost for f in factories_in_country)
         country_capacity_used = sum(f.total_lines_used for f in factories_in_country)
@@ -236,6 +286,8 @@ def update_sales_ajax():
 # --- ROUTE POUR AFFICHER LA PAGE OVERVIEW ---
 @app.route("/overview")
 def view_overview():
+    if world.is_game_over():
+        return redirect(url_for("game_over"))
     player = get_player()
     ranking = world.get_ranking()
     
@@ -277,12 +329,18 @@ def view_overview():
 def end_turn():
     # 1. On lance la résolution dans le moteur
     world.resolve_turn()
-    
+    if world.is_game_over():
+        return redirect(url_for("game_over"))
     # 2. Message de succès
     flash(f"Turn completed! Welcome to Turn {world.turn}.", "success")
     
     # 3. On redirige vers le début du cycle (les usines) pour le nouveau tour
     return redirect(url_for('view_factories'))
+
+@app.route("/gameover")
+def game_over():
+    ranking = world.get_ranking()
+    return render_template("game_over.html", ranking=ranking)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
