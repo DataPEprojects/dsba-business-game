@@ -212,17 +212,42 @@ def modify_lines_ajax():
     cost = 0
     try:
         if qty > 0:
-            target = next((f for f in factories_in_country if f.free_space >= qty), None)
-            if not target: raise ValueError("Max capacity reached for this country!")
-            cost = target.modify_lines(product, qty)
+            # Distribuer l'ajout sur TOUTES les usines du pays
+            remaining = qty
+            total_available = sum(f.free_space for f in factories_in_country)
+            if remaining > total_available:
+                raise ValueError(f"Max capacity reached for this country! ({total_available} free, {remaining} requested)")
+            
+            for f in factories_in_country:
+                if remaining <= 0:
+                    break
+                take = min(f.free_space, remaining)
+                if take > 0:
+                    cost += f.modify_lines(product, take)
+                    remaining -= take
+        
         elif qty < 0:
-            target = next((f for f in factories_in_country if f.product_lines.get(product, 0) > 0), None)
-            if not target: raise ValueError("No lines to remove.")
-            cost = target.modify_lines(product, qty)
+            # Retirer des lignes existantes
+            remaining = -qty
+            for f in factories_in_country:
+                if remaining <= 0:
+                    break
+                have = f.product_lines.get(product, 0)
+                take = min(have, remaining)
+                if take > 0:
+                    cost += f.modify_lines(product, -take)
+                    remaining -= take
+            if remaining > 0:
+                raise ValueError("No lines to remove.")
 
+        # Vérif argent
         if cost > 0 and player.cash < cost:
+            # Rollback: annuler ce qui a été fait
             if qty > 0:
-                target.modify_lines(product, -qty)
+                for f in factories_in_country:
+                    current = f.product_lines.get(product, 0)
+                    if current > 0:
+                        f.modify_lines(product, -current)
             return jsonify({'error': 'Not enough cash'}), 400
             
         player.cash -= cost
