@@ -323,7 +323,8 @@ def view_overview():
     for sale in world.sales_history:
         key = (sale["country"], sale["product"])
         if key not in sales_matrix:
-            base_demand = current_params["countries"][sale["country"]]["products"].get(sale["product"], {}).get("base_demand", 0)
+            # Use base_demand from the sale record (recorded at time of sale)
+            base_demand = sale.get("base_demand", 0)
             sales_matrix[key] = {
                 "country": sale["country"],
                 "product": sale["product"],

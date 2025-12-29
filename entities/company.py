@@ -4,7 +4,7 @@ class Company:
         self.name = name
         self.is_player = is_player
         self.ai_behavior = ai_behavior
-        self.cash = 10000000
+        self.cash = 100000
         self.profit = 0
         self.factories = {}   # { "USA": [Factories, ...], ... }
         self.stock = {}       # { "A": qty, ... }

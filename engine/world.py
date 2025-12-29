@@ -168,7 +168,8 @@ class World:
                                 "company_name": seller["company"].name,
                                 "is_player": seller["company"].is_player,
                                 "price": seller["price"],
-                                "quantity": qty_to_sell
+                                "quantity": qty_to_sell,
+                                "base_demand": base_demand  # Store demand at time of sale
                             })
                             
                             seller["stock"] -= qty_to_sell
