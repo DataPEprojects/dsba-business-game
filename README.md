@@ -48,6 +48,101 @@ A turn-based business simulation game where players compete against AI opponents
 ### 5. Overview & End Turn (`turn_overview.html`)
 - Review sales results and rankings
 - See competitor sales performance
+
+## Class Relationships Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          Flask App (main.py)                     │
+│                                                                  │
+│  Routes: /factories, /production, /market, /overview, etc.      │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ creates & uses
+                             ▼
+                    ┌────────────────┐
+                    │     World      │◄─────────────────┐
+                    │   (engine/)    │                  │
+                    │                │                  │
+                    │ - turn         │                  │
+                    │ - total_turns  │                  │
+                    │ - companies[]  │                  │
+                    │ - sales_history│                  │
+                    └────┬───────┬───┘                  │
+                         │       │                      │
+           creates       │       │ creates              │
+           & manages     │       │                      │
+                         │       │                      │
+         ┌───────────────┘       └──────────┐           │
+         │                                  │           │
+         ▼                                  ▼           │
+┌─────────────────┐                ┌─────────────────┐ │
+│   Parameters    │                │   AIManager     │ │
+│   (engine/)     │                │   (engine/)     │ │
+│                 │                │                 │ │
+│ - generator     │                │ - ais{}         │ │
+│ - _cache{}      │                │ - num_ais       │ │
+└────────┬────────┘                └────────┬────────┘ │
+         │ creates                          │ creates  │
+         │                                  │          │
+         ▼                                  ▼          │
+┌─────────────────┐                ┌─────────────────┐ │
+│MarketGenerator  │                │   AIBehavior    │ │
+│   (engine/)     │                │   (engine/)     │ │
+│                 │                │                 │ │
+│ - total_turns   │                │ - personality   │ │
+│ - base_config{} │                │ - expand_rate   │ │
+│                 │                │ - price_position│ │
+│ generates:      │                │ - product_focus │ │
+│  · demand       │                └─────────────────┘ │
+│  · prices       │                         │          │
+│  · events       │                         │          │
+└─────────────────┘                         │          │
+                                   assigned to         │
+                                            │          │
+         ┌──────────────────────────────────┘          │
+         │                                             │
+         ▼                                             │
+┌─────────────────┐                                    │
+│    Company      │◄───────────────────────────────────┘
+│  (entities/)    │         World manages list
+│                 │         of Company instances
+│ - name          │
+│ - is_player     │
+│ - ai_behavior   │◄──── AIBehavior (if AI)
+│ - cash          │
+│ - factories{}   │
+│ - stock{}       │
+│ - sales_decisions{}
+└────────┬────────┘
+         │ owns multiple
+         │
+         ▼
+┌─────────────────┐
+│    Factories    │
+│  (entities/)    │
+│                 │
+│ - id            │
+│ - country       │
+│ - capacity      │
+│ - product_lines{}
+│ - config        │◄──── references COUNTRY_CONFIG
+└─────────────────┘
+
+
+Key Relationships:
+─────────────────
+1. Flask App creates ONE World instance at startup
+2. World creates:
+   - Parameters (which creates MarketGenerator)
+   - AIManager (which creates AIBehavior instances)
+   - List of Company instances (1 player + N AIs)
+3. Each Company owns:
+   - Multiple Factories (dict by country)
+   - Stock inventory (dict by product)
+   - Sales decisions (dict by product)
+4. Each AI Company has an AIBehavior instance
+5. Factories reference COUNTRY_CONFIG for their properties
+```
 - Execute turn resolution (production → maintenance → sales)
 
 ### 6. Game Over (`game_over.html`)
