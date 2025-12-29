@@ -1,7 +1,22 @@
-# Business Simulation Game
+# Business Simulation Game (V2 Final)
 
 ## Overview
 A turn-based business simulation game where players compete against AI opponents to build factories, manage production, and sell products in a dynamic global market.
+
+## 🚀 Evolution: What Changed from V1?
+This final version (V2) introduces significant architectural improvements over the previous V1 prototype:
+
+* **🧠 From Scripted to Heuristic AI:**
+    * **V1 (Static):** AI opponents followed a hardcoded JSON script (e.g., *"Turn 1: Buy Factory, Turn 2: Sell Product A"*). They were predictable and could not react to the player.
+    * **V2 (Dynamic):** AI logic is now driven by a Python-based **Heuristic Engine** (`AI_manager.py`). Opponents have distinct **"Personalities"** (Aggressive, Conservative, etc.) and make decisions by analyzing market data in real-time. They will undercut your prices, expand when the market booms, and cut costs during recessions.
+
+* **⚙️ Game Configuration:**
+    * **V1:** Fixed 10-turn game with 5 opponents.
+    * **V2:** Added a **Start Screen** (`start.html`) allowing players to customize the company name, game duration (e.g., 20 or 50 turns), and opponent count (0-10).
+
+* **📈 Economic Tuning:**
+    * **V1:** Experimental market generation.
+    * **V2:** Refined **Economic Cycles** (Stability → Growth → Recession → Recovery). The math for demand and pricing has been balanced to ensure "Boom" and "Crash" events feel impactful but fair.
 
 ## Project Structure
 
